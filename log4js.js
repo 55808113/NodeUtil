@@ -9,7 +9,7 @@ log4js.configure({
         error: {
             type: 'dateFile',           //日志类型可以是file或者dataFile
             category: 'errLogger',    //日志名称
-            filename: path.join(__dirname, '/../../logs/error/'), //日志输出位置，当目录文件或文件夹不存在时自动创建
+            filename: path.join(__dirname, '/../../../logs/error/'), //日志输出位置，当目录文件或文件夹不存在时自动创建
             pattern: 'yyyy-MM-dd.log', //日志输出模式
             alwaysIncludePattern: true,
             maxLogSize: 104800, // 文件最大存储空间
@@ -18,7 +18,7 @@ log4js.configure({
         response: {
             type: 'dateFile',
             category: 'resLogger',
-            filename: path.join(__dirname, '/../../logs/responses/'),
+            filename: path.join(__dirname, '/../../../logs/responses/'),
             pattern: 'yyyy-MM-dd.log', //日志输出模式
             alwaysIncludePattern: true,
             maxLogSize: 104800,
@@ -27,7 +27,7 @@ log4js.configure({
         sqlInfo: {
             type: 'dateFile',
             category: 'sqlInfoLogger',
-            filename: path.join(__dirname, '/../../logs/sqlInfo/'),
+            filename: path.join(__dirname, '/../../../logs/sqlInfo/'),
             pattern: 'yyyy-MM-dd.log', //日志输出模式
             alwaysIncludePattern: true,
             maxLogSize: 104800,
@@ -36,7 +36,7 @@ log4js.configure({
         sqlErr: {
             type: 'dateFile',
             category: 'sqlErrLogger',
-            filename: path.join(__dirname, '/../../logs/sqlErr/'),
+            filename: path.join(__dirname, '/../../../logs/sqlErr/'),
             pattern: 'yyyy-MM-dd.log', //日志输出模式
             alwaysIncludePattern: true,
             maxLogSize: 104800, // 文件最大存储空间
