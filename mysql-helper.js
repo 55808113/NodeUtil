@@ -3,7 +3,7 @@
  *
  * */
 const mysql = require('mysql')
-const {$configlocal} = require('../../config')
+const {$configlocal} = require('../../../config')
 const $log4js = require('./log4js')
 // 使用连接池，提升性能
 const pool = mysql.createPool($configlocal.mysql);

@@ -5,7 +5,7 @@
 const redis = require('redis')
 //常用的js函数类
 const _ = require('lodash')
-const {$configlocal} = require('../../config')
+const {$configlocal} = require('../../../config')
 const $log4js = require('./log4js')
 let $client
 if ($configlocal.redis.enable) {

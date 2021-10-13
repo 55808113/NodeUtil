@@ -8,6 +8,10 @@ const $file = require('./file')
 const a = require("../index")
 //根据目录得到所有的文件。
 //const globby = require('globby')
+/**
+ *
+ * @returns {(function(*=, *): Promise<never>|Promise<void>|Promise<*>|undefined)|*}
+ */
 function registerRouter() {
     /**
      * 遍历目录
