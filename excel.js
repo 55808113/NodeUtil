@@ -19,7 +19,7 @@ module.exports = {
     /**
      * 错误的文件目录
      */
-    impFailpath: 'D:\\upload\\ImpErr',
+    impFailpath: path.join(__dirname, '/../../upload/ImpErr'),
     /**
      * 对导入的headers进行排序和过滤
      * @param headers
@@ -228,6 +228,11 @@ module.exports = {
      * @param {string} sql sql语句
      * @param {function} callbackParam 设置执行sql的参数返回参数
      * @returns {Promise<{fail: number, success: number, failfilename: string}>}
+     * {
+     *   fail: number, //错误的个数
+     *   success: number, //成功的个数
+     *   failfilename: string //错误的文件名
+     * }
      */
     impExcel: async function (ctx, sql, callbackParam) {
         //文件数据转xlsx格式

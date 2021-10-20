@@ -53,6 +53,21 @@ module.exports = {
         })
     },
     /**
+     * 开启事务：
+     * @param connection
+     * @returns {Promise<boolean>} 返回true成功，false失败
+     */
+    beginTransaction: function (connection){
+        return new Promise((resolve, reject) => {
+            connection.beginTransaction(err => {
+                if (err) {
+                    reject(err)
+                }
+                resolve(true)
+            })
+        })
+    },
+    /**
      * 执行sql语句
      * @param {object} connection 连接对象
      * @param {string} sql sql语句
@@ -80,18 +95,48 @@ module.exports = {
      * 执行sql语句
      * @param {string} sql sql语句
      * @param {object[]} param sql参数
-     * @returns {Promise<unknown>}
+     * @returns {Promise<number>}
      */
     execSql: async function (sql, param) {
-        let result
+        let result = 0
         try {
             let connection = await this.getConn();
             try {
                 result = await this.execSqlByConn(connection, sql, param)
-                connection.release();
             } catch (err) {
-                connection.release();
                 throw err
+            } finally {
+                connection.release();
+            }
+        } catch (err) {
+            throw err
+        }
+        return result;
+    },
+    /**
+     * 执行带事务的sql语句
+     * @param sql
+     * @param param
+     * @returns {Promise<number>}
+     */
+    execSqlByTransaction: async function (sql, param) {
+        let result = 0
+        try {
+            let connection = await this.getConn();
+            await this.beginTransaction(connection);
+            try {
+                result = await this.execSqlByConn(connection, sql, param)
+                connection.commit((error) => {
+                    if(error) {
+                        throw error;
+                        console.log('事务提交失败')
+                    }
+                })
+            } catch (err) {
+                connection.rollback();
+                throw err
+            } finally {
+                connection.release();
             }
         } catch (err) {
             throw err

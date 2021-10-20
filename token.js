@@ -8,6 +8,14 @@ const $convert = require('./convert')
 const $crypto = require('./crypto')
 const token = {
     /**
+     * 得到Token字符串
+     * @param ctx
+     * @returns {string} 如果是null，表示没有取得
+     */
+    getTokenString: function (ctx){
+        return ctx.request.body.token || ctx.request.query.token || ctx.request.headers['Authorization'] || ctx.request.headers['token'] || ctx.session.token || ctx.cookies.get('token');
+    },
+    /**
      * 创建Token
      * @param {object} obj 数据对象
      * @param {int} timeout 过期时间：默认有效期为一天
@@ -31,6 +39,22 @@ const token = {
      * 解密Token
      * @param {string} token字符串
      * @returns {boolean|{payload: (*|{}), signature: *, checkSignature}} token对象
+     * {
+     *     //数据
+     *     payload: {
+     *         //数据返回的数据内容
+     *         data: {},
+     *         //token生成的时间的，单位秒
+     *         created: 10000,
+     *         //token有效期为一天
+     *         exp: 24 * 60 * 60
+     *     },
+     *     //签名
+     *     signature: '',
+     *     //检验签名
+     *     checkSignature: ''
+     * }
+     *
      */
     decodeToken: function (token) {
         let decArr = $convert.strToArray(token, ".")
@@ -51,27 +75,35 @@ const token = {
         let checkSignature = $crypto.SHA.HmacSHA256(decArr[0])
 
         return {
+            //数据内容
             payload: payload,
+            //签名
             signature: decArr[1],
+            //检验签名
             checkSignature: checkSignature
         }
     },
+
     /**
-     * 检查Token
-     * @param ctx
-     * @returns {boolean} 是否成功
+     * 得到Token的返回的对象
+     * @param {string} token
+     * @returns {object} 如果是null，表示没有取得
      */
-    checkToken: function (ctx) {
-        let token = ctx.request.body.token || ctx.request.query.token || ctx.request.headers['token'] || ctx.session.token || ctx.cookies.get('token');
-        if (!token) return false;
+    getTokenData: function (ctx){
+        let token = this.getTokenString(ctx)
+        if (!token) return null;
         let resDecode = this.decodeToken(token);
         if (!resDecode) {
-            return false;
+            return null;
         }
         //是否过期
         let expState = (parseInt(Date.now() / 1000) - parseInt(resDecode.payload.created)) > parseInt(resDecode.payload.exp) ? false : true;
         if (resDecode.signature === resDecode.checkSignature && expState) {
-            //如果cookies没有设置就设置给html
+            let data = resDecode.payload.data
+            ctx.session.pkid = data.pkid;
+            ctx.session.cd_info_ssgx = data.cd_info_ssgx;
+            ctx.session.usernm = data.usernm;
+            /*//如果cookies没有设置就设置给html
             if (ctx.session.token != token) {
                 ctx.session.token = token;
                 ctx.session.pkid = resDecode.payload.data.pkid;
@@ -79,39 +111,22 @@ const token = {
                 ctx.session.usernm = resDecode.payload.data.usernm;
                 ctx.session.rights = $convert.strToArray(resDecode.payload.data.rights, ",");
             }
-            ctx.cookies.set('token', token, {signed: true, maxAge: 7200000})
+            ctx.cookies.set('token', token, {signed: true, maxAge: 7200000})*/
+            return data;
+        }
+        return null;
+    },
+    /**
+     * 检查Token
+     * @param ctx
+     * @returns {boolean} 是否成功
+     */
+    checkToken: function (ctx) {
+        let result = this.getTokenData(ctx)
+        if (result) {
             return true;
         }
         return false;
-    },
-    /**
-     * 检查权限
-     * @param ctx
-     * @param {object} param 传过来的参数值
-     * {
-     *  isall:是否完全配置路径
-     *  name:参数值
-     *  tgparams:可能不用认证的参数数组
-     * }
-     * @returns {boolean}
-     */
-    checkRight: function (ctx, param = {isall: false, value: "", tgparams: []}) {
-        let b = false
-        let paramobj = Object.assign({isall: false, value: "", tgparams: []}, param)
-        let urlobj = url.parse(ctx.url, true);
-        if (paramobj.isall) {
-            if (ctx.session.rights.indexOf(urlobj.path) != -1) {
-                b = true
-            }
-        } else if (ctx.session.rights.indexOf(urlobj.pathname) != -1 || (paramobj.tgparams.indexOf(paramobj.value) != -1)) {
-            b = true
-        }
-
-        if (!b) {
-            console.error(`${chalk.red(ctx.session.usernm + "没有权限网页" + urlobj.pathname + ":" + paramobj.value)}`)
-            $log4js.errLogger(ctx, ctx.session.usernm + "没有权限网页" + urlobj.pathname + ":" + paramobj.value)
-        }
-        return b
     }
 }
 module.exports = token;
