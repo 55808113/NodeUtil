@@ -7,6 +7,7 @@ const $log4js = require('./log4js')
 const $convert = require('./convert')
 const $crypto = require('./crypto')
 const $util = require('./util')
+const _ = require('lodash')
 const token = {
     /**
      * 得到Token字符串
@@ -127,10 +128,7 @@ const token = {
             let resDecode = this.getToken(token)
             if (!resDecode) return
             let data = resDecode.payload.data
-            ctx.session.token = token;
-            ctx.session.pkid = data.pkid;
-            //ctx.session.cd_info_ssgx = data.cd_info_ssgx;
-            ctx.session.usernm = data.usernm;
+            _.assign(ctx.session,data,{token:token})
         }
     },
     /**
@@ -145,18 +143,17 @@ const token = {
      * 得到用户pkid
      * @returns {Promise<string>}
      */
-    getUserPkid: function (ctx) {
-        let pkid = ""
+    getUserData: function (ctx) {
+        let result = null
         if (!$util.isEmpty(ctx.session.pkid)){
-            pkid = ctx.session.pkid
+            result = ctx.session
         }else{
             let token = this.getTokenString(ctx)
             let resDecode = this.getToken(token)
-            if (!resDecode) return pkid
-            let data = resDecode.payload.data
-            pkid = data.pkid
+            if (!resDecode) return result
+            result = resDecode.payload.data
         }
-        return pkid
+        return result
     }
 }
 module.exports = token;
