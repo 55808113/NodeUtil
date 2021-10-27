@@ -24,8 +24,9 @@ module.exports = {
      * @param {int} imgW 图片的宽度
      */
     resizeimg: function (filepath, thumbnailname, option) {
-        let smallfilename = this.getSmallImgName(filepath);
-
+        let smallfilename = thumbnailname || this.getSmallImgName(filepath);
+        option = option || {}
+        option = _.assign({},{width:200},option)
         resizeImg(fs.readFileSync(filepath), {width: option.width, height: option.height}).then(function (buf) {
             fs.writeFileSync(smallfilename, buf);
         });
