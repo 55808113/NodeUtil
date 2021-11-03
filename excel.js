@@ -29,6 +29,37 @@ module.exports = {
 
     },
     /**
+     * mysql的类型转换为excel的类型
+     * @param datatype
+     */
+    convertMysqlType: function (datatype){
+        let result = datatype
+        switch (datatype){
+            case "tinyint":
+                result = "bool";
+                break;
+            case "char":
+                result = "string";
+                break;
+            case "varchar":
+                result = "string";
+                break;
+            case "text":
+                result = "string";
+                break;
+            case "int":
+                result = "number";
+                break;
+            case "smallint":
+                result = "number";
+                break;
+            case "float":
+                result = "number";
+                break;
+        }
+        return result;
+    },
+    /**
      * 导出excel数据流
      * @param {string} title 导出的文件名
      * @param {object[]}  headers 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
@@ -159,17 +190,15 @@ module.exports = {
         let cols = []
         for (let key in headerObj) {
             let item = headerObj[key]
-            if (item.sfdc) {
-                let col = {
-                    name: key,
-                    type: item.type,
-                    title: item.title,
-                    order: item.order,
-                    //模板的字段
-                    templaterows: item.templaterows
-                };
-                cols.push(col);
-            }
+            let col = {
+                name: key,
+                type: item.type,
+                title: item.title,
+                order: item.order,
+                //模板的字段
+                templaterows: item.templaterows
+            };
+            cols.push(col);
         }
         cols = _.orderBy(cols, ['order'], ['asc']);
         let excelStream = this.expExcelStream(title, cols, rows)
@@ -188,14 +217,20 @@ module.exports = {
         let headers = {};
         for (let i = 0; i < colresults.length; i++) {
             let item = colresults[i]
-            if (item.sfdc == 0) continue
+            if ($convert.getBool(item.sfdc)) continue
             let columntype = "string"
             if (item.columntype == "DATETIME") {
                 columntype = "datetime"
             } else if (item.columntype == "NUMBER") {
                 columntype = "number"
             }
-            headers[item.tablecolumn] = {title: item.columnname, type: columntype}
+            headers[item.tablecolumn] = {
+                title: item.columnname,
+                type: columntype,
+                order: item.order,
+                //模板的字段
+                templaterows: item.templaterows
+            }
         }
         this.expExcel(ctx, title, headers, rows);
     },

@@ -276,13 +276,35 @@ module.exports = {
             return true;
         }
         if (typeof obj === 'string') {
-            if (obj === "") {
+            if (_.trim(obj) === "") {
                 return true;
             }
-            let reg = new RegExp("^([ ]+)|([　]+)$");
-            return reg.test(obj);
         }
         return false;
+    },
+    /**
+     * 判断是否为空对象
+     * @param obj
+     */
+    isEmptyObject: function (item) {
+        if (Object.keys(item).length == 0) {
+            return true;
+        }
+        return false;
+    },
+    /**
+     * 判断是否为不为空对象
+     * @param obj
+     */
+    isNotEmptyObject: function (item) {
+        return !this.isEmptyObject(item);
+    },
+    /**
+     * 判断字符串是否不为空
+     * @param obj
+     */
+    isNotEmpty: function (obj) {
+        return !this.isEmpty(obj);
     },
     /**
      * 随机数

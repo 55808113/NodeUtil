@@ -137,7 +137,8 @@ const token = {
      */
     setCookieToken: function (ctx){
         let token = this.getTokenString(ctx)
-        ctx.cookies.set('token', token, {signed: true, maxAge: 7200000})
+        //12个小时过期
+        ctx.cookies.set('token', token, {signed: true, maxAge: 12 * 60 * 60 * 1000})
     },
     /**
      * 得到用户pkid

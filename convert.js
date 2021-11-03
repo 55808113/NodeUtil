@@ -14,7 +14,7 @@ module.exports = {
     getBool: function (val, defaultvalue = false) {
         if ($util.isEmpty(val))
             return defaultvalue
-        else if (val === true || val === "true" || val === 1)
+        else if (val === true || val.toLowerCase() === "true" || val === 1)
             return true
         else
             return false

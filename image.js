@@ -72,7 +72,7 @@ module.exports = {
             fs.readdir(params.srcdir, function (err, files) {
                 files.forEach(function (file) {
                     //如果不是图片返回空值
-                    if (_.indexOf(['png', 'jpg', 'jpeg', 'bmp'], $file.extname(file)) == -1) return false
+                    if (_.indexOf(['png', 'jpg', 'jpeg', 'bmp'], $file.extname(file).toLowerCase()) == -1) return false
                     let srcfilepath = path.join(params.srcdir, file)
                     let destfilepath = obj.getThumbnailpath(srcfilepath)
                     if (fs.existsSync(destfilepath)) return false
@@ -95,12 +95,17 @@ module.exports = {
             if (params.height !== undefined) imoptions.height = params.height;
             //if (win) {
             fs.readFile(imoptions.srcPath, function (err, data) {
-                if (err) throw err;
-                resizeImg(data, {width: imoptions.width, height: imoptions.height}).then(function (buf) {
+                if (err) {
+                    //throw err
+                };
+                resizeImg(data, {width: imoptions.width, height: imoptions.height}).then(buf => {
                     fs.writeFileSync(imoptions.dstPath, buf);
                     //这句话的作用是执行完了，继续执行下面的任务。否则对列开始是8个。运行完8个就不再继续执行了。
                     callback(null, {resizeimg, maxworkers});
+                },err=> {
+                    console.log('err::',err)
                 });
+
             })
             /*} else {
                 images(imoptions.srcPath) //Load image from file

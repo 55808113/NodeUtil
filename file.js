@@ -85,6 +85,7 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     deleteFolder: function (filepath) {
+        let self = this;
         return new Promise(async (resolve, reject) => {
             let files = [];
             if (fs.existsSync(filepath)) {
@@ -92,7 +93,7 @@ module.exports = {
                 await files.forEach(function (file, index) {
                     let curPath = path.join(filepath, file);
                     if (fs.statSync(curPath).isDirectory()) {
-                        deleteFolder(curPath)
+                        self.deleteFolder(curPath)
                     } else {
                         fs.unlinkSync(curPath)
                     }
@@ -130,11 +131,25 @@ module.exports = {
         return resultFiles
     },
     /**
+     * 得到当前目录下所有目录列表
+     * @param {string} filepath 目录路径
+     */
+    getAllDir: function (filepath){
+        return this.getAllDirFile(filepath,1)
+    },
+    /**
+     * 得到当前目录下所有文件列表
+     * @param {string} filepath 目录路径
+     */
+    getAllFile: function (filepath){
+        return this.getAllDirFile(filepath,2)
+    },
+    /**
      * 得到当前目录下所有文件的列表（包括目录和文件）
      * @param {string} filepath 目录路径
      * @param {integer} type 过滤类型。type=0：所有文件。type=1：返回目录，type=2：返回文件
      */
-    getAllFiles: function (filepath, type = 0) {
+    getAllDirFile: function (filepath, type = 0) {
         let filelist = [];
         let result = [];
         if (fs.existsSync(filepath)) {

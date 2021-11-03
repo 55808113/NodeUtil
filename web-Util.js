@@ -30,6 +30,7 @@ module.exports = {
     getClientIP: function (ctx) {
         let req = ctx.req
         let ip = req.headers['x-forwarded-for'] ||
+            req.headers['x-real-ip'] ||
             req.ip ||
             req.connection.remoteAddress ||
             req.socket.remoteAddress ||
