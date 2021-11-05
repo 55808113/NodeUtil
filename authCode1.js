@@ -8,7 +8,7 @@ function refreshCode() {
     $.ajax({
         type: "get",
         dataType: "json",
-        url: "/?ajax=code&width=" + $("#img_code").width() + "&height=" + $("#img_code").height() +"&id=" + timenow,
+        url: "/index_code?width=" + $("#img_code").width() + "&height=" + $("#img_code").height() +"&id=" + timenow,
         success: function (msg) {
             $("#img_code").css('display', 'block');
             $("#img_code").attr('src', msg.data);

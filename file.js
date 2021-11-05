@@ -8,6 +8,7 @@ const sendfile = require('koa-sendfile')
 const compressing = require('compressing')
 const http = require('http')
 const $util = require('./util')
+const $crypto = require('./crypto')
 module.exports = {
     /**
      * 得到小写的文件扩展名，去掉“。”。
@@ -192,7 +193,7 @@ module.exports = {
      * @param {string} newfilepath 新的路径
      * @returns {Promise<unknown>}
      */
-    reNameFile: function (filepath, newfilepath) {
+    moveFile: function (filepath, newfilepath) {
         return new Promise(async (resolve, reject) => {
             if (fs.existsSync(filepath)) {
                 this.createFolder(path.dirname(newfilepath))
@@ -280,6 +281,24 @@ module.exports = {
         return Buffer.from(data, 'base64');
     },
     /**
+     * 判断是否为目录
+     * @param filepath
+     */
+    isDirectory:function (filepath){
+        let info = fs.statSync(filepath)
+        if (info && !info.isDirectory()) {
+            return false;
+        }
+        return true;
+    },
+    /**
+     * 判断是否为文件
+     * @param filepath
+     */
+    isFile:function (filepath){
+        return !this.isDirectory(filepath)
+    },
+    /**
      * 得到随机的UUID的文件名
      * @param {string} filename 文件名
      * @returns {string} 随机文件名
@@ -287,6 +306,15 @@ module.exports = {
      */
     UUIDFileName: function (filename) {
         return $util.UUID() + path.extname(filename).toLowerCase();
+    },
+    /**
+     * 得到MD5的文件名
+     * @param {string} filename 文件名
+     * @returns {string} 随机文件名
+     * @constructor
+     */
+    MD5FileName: function (filepath) {
+        return $crypto.MD5(filepath) + path.extname(filepath).toLowerCase()
     },
     /**
      * 下载文件
@@ -347,12 +375,14 @@ module.exports = {
                 const contentType = res.headers['content-type'];//获取请求类型
 
                 let error;
-                if (statusCode !== 200) {//如果请求不成功 （状态码200代表请求成功哦那个）
+                if (statusCode !== 200) {
+                    //如果请求不成功 （状态码200代表请求成功哦那个）
                     error = new Error('请求失败\n' +
                         `状态码: ${statusCode}`); //报错抛出状态码
-                } else if (!/^application\/json/.test(contentType)) {//验证请求数据类型是否为json数据类型   json的content-type :'content-type':'application/json'
-                    error = new Error('无效的 content-type.\n' +//再次报错
-                        `期望的是 application/json 但接收到的是 ${contentType}`);
+                } else if (!/^application\/json/.test(contentType)) {
+                    //验证请求数据类型是否为json数据类型   json的content-type :'content-type':'application/json'
+                    //再次报错
+                    error = new Error('无效的 content-type.\n' + `期望的是 application/json 但接收到的是 ${contentType}`);
                 }
                 if (error) {//如果报错了
                     reject(error);
@@ -368,9 +398,7 @@ module.exports = {
                 reject(e);
             });
         })
-    }
-
-    ,
+    },
     /**
      * 下载文件流
      * @param {string} url 网站路径
@@ -419,8 +447,7 @@ module.exports = {
                 reject(e);
             });
         })
-    }
-    ,
+    },
     /**
      * 压缩文件 例子await compressing.zip.compressDir('d:/abc.doc','d:/nodejs-compressing-demo.zip')
      * @param {string} sourcePath 源路径
@@ -429,8 +456,7 @@ module.exports = {
      */
     zipfile: async function (sourcePath, destZipPath) {
         await compressing.zip.compressDir(sourcePath, destZipPath)
-    }
-    ,
+    },
     /**
      * 解压文件 例子await compressing.zip.uncompress('d:/nodejs-compressing-demo.zip', 'd:/nodejs-compressing-demo')
      * @param {string} sourceZipPath  ZIP文件目标路径
@@ -439,7 +465,6 @@ module.exports = {
      */
     unzipfile: async function (sourceZipPath, destDir) {
         await compressing.zip.uncompress(sourceType, destType)
-    }
-    ,
+    },
 
 };

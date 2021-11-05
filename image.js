@@ -57,23 +57,32 @@ module.exports = {
      * @param {string} filepath 原路径
      */
     getThumbnailpath: function (filepath) {
-        return path.join(this.thumbnailpath, $crypto.MD5(filepath) + path.extname(filepath).toLowerCase());
+        return path.join(this.thumbnailpath, $file.MD5FileName(filepath));
     },
     /**
      * 生成缩略图返回名称
-     * @param {string} filedir 图片文件的目录
+     * @param {string} filepath 图片文件的目录或者文件
      * @param {json} option 参数
      */
-    thumbnail: function (filedir, option) {
-        function resize(params) {
+    thumbnail: function (filepath, option) {
+        /**
+         * 文件目录批量修改大小，线程的。
+         * @param params
+         * {
+         *     src:"",
+         *     width:100, //如果不写就代表width根据height适应
+         *     height:100 //如果不写就代表height根据width适应
+         * }
+         */
+        function resizeByDir(params) {
             //多线程的任务，非常的好用。方便进行大量数据处理时使用。
             let queue = async.queue(resizeimg, maxworkers);
             //let queue = async.auto(resizeimg);
-            fs.readdir(params.srcdir, function (err, files) {
+            fs.readdir(params.src, function (err, files) {
                 files.forEach(function (file) {
                     //如果不是图片返回空值
                     if (_.indexOf(['png', 'jpg', 'jpeg', 'bmp'], $file.extname(file).toLowerCase()) == -1) return false
-                    let srcfilepath = path.join(params.srcdir, file)
+                    let srcfilepath = path.join(params.src, file)
                     let destfilepath = obj.getThumbnailpath(srcfilepath)
                     if (fs.existsSync(destfilepath)) return false
                     queue.push({
@@ -86,22 +95,35 @@ module.exports = {
             });
         }
 
+        /**
+         *
+         * @param params
+         * {
+         *      src: "",
+                dest: "",
+                width: 100,
+                height: 100
+         * }
+         * @param callback
+         */
         function resizeimg(params, callback) {
-            var imoptions = {
-                srcPath: params.src,
-                dstPath: params.dest
+            /*var imoptions = {
+                src: params.src,
+                dest: params.dest
             };
             if (params.width !== undefined) imoptions.width = params.width;
-            if (params.height !== undefined) imoptions.height = params.height;
+            if (params.height !== undefined) imoptions.height = params.height;*/
             //if (win) {
-            fs.readFile(imoptions.srcPath, function (err, data) {
+            fs.readFile(params.src, function (err, data) {
                 if (err) {
                     //throw err
                 };
-                resizeImg(data, {width: imoptions.width, height: imoptions.height}).then(buf => {
-                    fs.writeFileSync(imoptions.dstPath, buf);
+                resizeImg(data, {width: params.width, height: params.height}).then(buf => {
+                    fs.writeFileSync(params.dest, buf);
                     //这句话的作用是执行完了，继续执行下面的任务。否则对列开始是8个。运行完8个就不再继续执行了。
-                    callback(null, {resizeimg, maxworkers});
+                    if (callback){
+                        callback(null, {resizeimg, maxworkers});
+                    }
                 },err=> {
                     console.log('err::',err)
                 });
@@ -127,13 +149,22 @@ module.exports = {
         //通过md5加密得到唯一的名称
         //thumbnailname = $crypto.MD5(filepath);
         $file.createFolder(this.thumbnailpath)
-
-        resize({
-            srcdir: filedir,
-            //destdir: this.thumbnailpath,
-            width: option.width,
-            height: option.height
-        });
+        if ($file.isDirectory(filepath)){
+            resizeByDir({
+                src: filepath,
+                //destdir: this.thumbnailpath,
+                width: option.width,
+                height: option.height
+            });
+        }else{
+            if (_.indexOf(['png', 'jpg', 'jpeg', 'bmp'], $file.extname(filepath).toLowerCase()) == -1) return false
+            resizeimg({
+                src: filepath,
+                dest: obj.getThumbnailpath(filepath),
+                width: option.width,
+                height: option.height
+            })
+        }
         /*gm(filepath).thumb(option.width, // Width
             option.height, // Height
             filename, // Output file name
