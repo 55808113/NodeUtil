@@ -197,13 +197,24 @@ module.exports = {
         return new Promise(async (resolve, reject) => {
             if (fs.existsSync(filepath)) {
                 this.createFolder(path.dirname(newfilepath))
-                fs.rename(filepath, newfilepath, function (err) {
+                //因为下面的方法在文件跨盘符时不行。所以要用下面的方法
+                /*fs.rename(filepath, newfilepath, function (err) {
                     if (err) reject(err)
                     fs.stat(newfilepath, function (err, stats) {
                         if (err) reject(err)
                         //console.log('stats: ' + JSON.stringify(stats));
                         resolve();
                     });
+                });*/
+                let readStream=fs.createReadStream(filepath);
+                let writeStream=fs.createWriteStream(newfilepath);
+                readStream.pipe(writeStream);
+                readStream.on('end',function(){
+                    fs.unlinkSync(filepath);
+                    resolve();
+                });
+                readStream.on('error',function(err){
+                    reject(err)
                 });
             }
         })
