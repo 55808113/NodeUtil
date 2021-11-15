@@ -4,6 +4,7 @@
 const dayjs = require('dayjs');
 const _ = require('lodash')
 const $util = require('./util')
+const $log4js = require('./log4js')
 module.exports = {
     /**
      * 向前台返回JSON方法的简单封装
@@ -119,7 +120,11 @@ module.exports = {
      */
     strToJson: function (str) {
         if (!$util.isEmpty(str) && str != 0) {
-            return JSON.parse(str);
+            try {
+                return JSON.parse(str);
+            }catch (err){
+                $log4js.errLogger(null, err)
+            }
         }
     },
     /**
