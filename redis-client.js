@@ -5,31 +5,34 @@
 const redis = require('redis')
 //常用的js函数类
 const _ = require('lodash')
-const {$configlocal} = require('../../../config')
 const $log4js = require('./log4js')
-let $client
-if ($configlocal.redis.enable) {
-    $client = redis.createClient($configlocal.redis)
-    //const $client = redis.createClient($configlocal.redis)
-    //当debug为真是不执行缓存
-    $client.on('ready', function (res) {
-        console.log('ready');
-    });
-
-    $client.on('end', function (err) {
-        console.log('end！');
-    });
-
-    $client.on('error', function (err) {
-        $log4js.errLogger(null, err)
-    });
-
-    $client.on('connect', function () {
-        console.log('redis connect success!');
-    });
-}
 
 module.exports = {
+    client: null,
+    /**
+     * Create a new Client instance.
+     * @param {object|string} config Configuration or connection string for new MySQL connections
+     * @public
+     */
+    createClient: function (config){
+        if (!config.enable) return;
+        this.client = redis.createClient(config)
+        this.client.on('ready', function (res) {
+            console.log('ready');
+        });
+
+        this.client.on('end', function (err) {
+            console.log('end！');
+        });
+
+        this.client.on('error', function (err) {
+            $log4js.errLogger(null, err)
+        });
+
+        this.client.on('connect', function () {
+            console.log('redis connect success!');
+        });
+    },
     /**
      * 设置对象
      * @param {string} key 键的名称
@@ -38,16 +41,16 @@ module.exports = {
      * @returns {boolean}
      */
     set: function (key, val, time) {
-        if (!$configlocal.redis.enable) return;
+        if (!this.client) return;
         if (typeof val === 'object') {
             val = JSON.stringify(val)
         }
-        if (!$client.connected) return false
+        if (this.client.connected) return false
         if (!time) {
-            $client.set(key, val)
+            this.client.set(key, val)
         } else {
             //将毫秒单位转为秒
-            $client.setex(key, time, value);
+            this.client.setex(key, time, value);
         }
 
         return true
@@ -58,13 +61,14 @@ module.exports = {
      * @returns {Promise<unknown>|null}
      */
     get: function (key) {
-        if (!$configlocal.redis.enable) return null;
+        let self = this
+        if (!this.client) return null;
         return new Promise((resolve, reject) => {
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
-            $client.get(key, (err, val) => {
+            self.client.get(key, (err, val) => {
                 if (err) {
                     //$log4js.errLogger(null,err)
                     //resolve(null)
@@ -80,7 +84,7 @@ module.exports = {
                 } catch (error) {
                     resolve(val)
                 }
-                $client.quit()
+                self.client.quit()
             })
         })
     },
@@ -90,9 +94,10 @@ module.exports = {
      * @returns {boolean}
      */
     del: function (key) {
-        if (!$configlocal.redis.enable) return;
-        if (!$client.connected) return false
-        $client.del(key)
+        let self = this;
+        if (!this.client) return;
+        if (!self.client.connected) return false
+        self.client.del(key)
         return true
     },
     /*设置对象
@@ -108,12 +113,13 @@ module.exports = {
      * @returns {boolean}
      */
     hset: function (key, field, val) {
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         if (typeof val === 'object') {
             val = JSON.stringify(val)
         }
-        if (!$client.connected) return false
-        $client.hset(key, field, val)
+        if (!self.client.connected) return false
+        self.client.hset(key, field, val)
         return true
     },
     /*得到json对象
@@ -128,14 +134,15 @@ module.exports = {
      * @returns {Promise<unknown>|null}
      */
     hget: function (key, field) {
-        if (!$configlocal.redis.enable) return null;
+        let self = this;
+        if (!this.client) return null;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
-            $client.hget(key, field, (err, val) => {
+            self.client.hget(key, field, (err, val) => {
                 if (err) {
                     //$log4js.errLogger(null,err)
                     //resolve(null)
@@ -161,9 +168,10 @@ module.exports = {
      * @returns {boolean}
      */
     hdel: function (key, field) {
-        if (!$configlocal.redis.enable) return;
-        if (!$client.connected) return false
-        $client.hdel(key, field)
+        let self = this;
+        if (!this.client) return;
+        if (!self.client.connected) return false
+        self.client.hdel(key, field)
         return true
     },
     /**
@@ -173,15 +181,16 @@ module.exports = {
      * @returns {boolean}
      */
     setList: function (key, list) {//添加整个数组
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         for (let i = 0; i < list.length; i++) {
             if ((typeof list[i]) === "object") {
                 list[i] = JSON.stringify(list[i])
             }
         }
-        $client.lpush(key, list[0]);
+        self.client.lpush(key, list[0]);
         for (let i = 1; i < list.length; i++) {
-            $client.rpush(key, list[i])
+            self.client.rpush(key, list[i])
         }
         //cb(null,"set success");
         return true;
@@ -193,14 +202,15 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     pushList: function (key, value) {//添加单个数据
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
-            $client.rpush(key, value, function (err, replay) {
+            self.client.rpush(key, value, function (err, replay) {
                 if (err) {
                     reject(err)
                 } else {
@@ -217,14 +227,15 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     removeListByValue: function (key, value) {
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
-            $client.lrem(key, 1, value, function (err, replay) {
+            self.client.lrem(key, 1, value, function (err, replay) {
                 if (err) {
                     reject(err)
                 } else {
@@ -241,15 +252,16 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     updateListValueByIndex: function (key, index, newValue) {
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
             newValue = JSON.stringify(newValue);
-            $client.lset(key, 1, newValue, function (err, data) {
+            self.client.lset(key, 1, newValue, function (err, data) {
                 if (err) {
                     reject(err)
                 } else {
@@ -266,17 +278,18 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     insertValueByIndex: function (key, value, index) {
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
             index = Number(index);
             if (index === 0) {
-                $client.lindex(key, index, function (err, result) {
-                    $client.linsert(key, "BEFORE", result, value, function (err, replay) {
+                self.client.lindex(key, index, function (err, result) {
+                    self.client.linsert(key, "BEFORE", result, value, function (err, replay) {
                         if (err) {
                             reject(err)
                         } else {
@@ -285,8 +298,8 @@ module.exports = {
                     })
                 });
             } else {
-                $client.lindex(key, index - 1, function (err, result) {
-                    $client.linsert(key, "AFTER", result, value, function (err, replay) {
+                self.client.lindex(key, index - 1, function (err, result) {
+                    self.client.linsert(key, "AFTER", result, value, function (err, replay) {
                         if (err) {
                             reject(err)
                         } else {
@@ -304,15 +317,16 @@ module.exports = {
      * @returns {Promise<unknown>|null}
      */
     getValueByIndex: function (key, index) {
-        if (!$configlocal.redis.enable) return null;
+        let self = this;
+        if (!this.client) return null;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
 
-            $client.lindex(key, index, function (err, data) {
+            self.client.lindex(key, index, function (err, data) {
                 if (err) {
                     reject(err)
                 } else {
@@ -329,15 +343,16 @@ module.exports = {
      * @returns {Promise<unknown>|null}
      */
     getListByRange: function (key, begin, end) {
-        if (!$configlocal.redis.enable) return null;
+        let self = this;
+        if (!this.client) return null;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
 
-            $client.lrange(key, begin, end, function (err, data) {
+            self.client.lrange(key, begin, end, function (err, data) {
                 if (err) {
                     reject(err)
                 } else {
@@ -352,15 +367,16 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     deleteKey: function (key) {
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
 
-            $client.del(key, function (err, data) {
+            self.client.del(key, function (err, data) {
                 if (err) {
                     reject(err)
                 } else {
@@ -375,15 +391,16 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     insertListTransaction: function (functions) {
-        if (!$configlocal.redis.enable) return;
+        let self = this;
+        if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!$client.connected) {
+            if (!self.client.connected) {
                 resolve(null)
                 return
             }
 
-            $client.multi(functions).exec(function (err, replies) {
+            self.client.multi(functions).exec(function (err, replies) {
                 if (err) {
                     reject(err)
                 } else {

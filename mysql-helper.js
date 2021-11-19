@@ -4,16 +4,23 @@
  * */
 const mysql = require('mysql')
 const _ = require('lodash')
-const {$configlocal} = require('../../../config')
 const $log4js = require('./log4js')
 const $util = require('./util')
 const $convert = require('./convert')
-// 使用连接池，提升性能
-const MySQL_POOL = mysql.createPool($configlocal.mysql);
 
 module.exports = {
+    /**
+     * Create a new Pool instance.
+     * @param {object|string} config Configuration or connection string for new MySQL connections
+     * @return {Pool} A new MySQL pool
+     * @public
+     */
+    createPool: function (config){
+        this.pool = mysql.createPool(config)
+        return this.pool
+    },
     //连接池
-    pool: MySQL_POOL,
+    pool: null,
     /**
      * 拼写sql存储过程语句
      * @param {string} sql sql语句

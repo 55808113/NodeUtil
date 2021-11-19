@@ -3,12 +3,19 @@
  *
  * */
 const oracle = require('oracledb')
-const {$configlocal} = require('../../../config')
 const $log4js = require('./log4js')
-// 使用连接池，提升性能
-oracle.createPool($configlocal.oracle);
 
 module.exports = {
+    /**
+     * Create a new Pool instance.
+     * @param {object|string} config Configuration or connection string for new MySQL connections
+     * @return {Pool} A new MySQL pool
+     * @public
+     */
+    createPool: function (config){
+        // 使用连接池，提升性能
+        oracle.createPool(config);
+    },
     /**
      * 拼写sql存储过程语句
      * @param {string} sql sql语句

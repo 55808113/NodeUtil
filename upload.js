@@ -7,7 +7,6 @@ const Busboy = require('busboy')
 //常用的js函数类
 const _ = require('lodash')
 const $file = require('./file')
-//const {$conf} = require('../config')
 const $util = require('./util')
 
 module.exports = {
