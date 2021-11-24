@@ -59,8 +59,10 @@ module.exports = {
     getDate: function (val, defaultvalue = null) {
         if (!dayjs(val).isValid())
             return defaultvalue;
-        else
-            return val;
+        else{
+
+            return new Date(val);
+        }
     },
     /**
      * 得到数字。如果为空根据默认值返回
