@@ -60,7 +60,6 @@ module.exports = {
         if (!dayjs(val).isValid())
             return defaultvalue;
         else{
-
             return new Date(val);
         }
     },
