@@ -356,11 +356,15 @@ module.exports = {
      */
     downloadStream: async function (ctx, filepath) {
         let info = fs.statSync(filepath)
-        let range = ctx.request.headers.range;
-        let positions = range.replace(/bytes=/, "").split("-");
-        let start = parseInt(positions[0], 10);
         let total = info.size;
-        let end = positions[1] ? parseInt(positions[1], 10) : total - 1;
+        let range = ctx.request.headers.range;
+        let start = 0;
+        let end = total;
+        if (range){
+            let positions = range.replace(/bytes=/, "").split("-");
+            start = parseInt(positions[0], 10);
+            end = positions[1] ? parseInt(positions[1], 10) : total - 1;
+        }
         let chunksize = (end - start) + 1;
         ctx.response.status = 206;
         ctx.set('Content-Range', "bytes " + start + "-" + end + "/" + total);
