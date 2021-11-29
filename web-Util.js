@@ -3,7 +3,8 @@
  */
 //node访问其它网站的数据的类
 const Axios = require("axios")
-
+//常用的js函数类
+const _ = require('lodash')
 module.exports = {
     /**
      * 建立cookie
@@ -48,21 +49,22 @@ module.exports = {
      * @param {string} url 路径
      * @param {object} params post或者get参数
      * @param {string} method 提交的方法get或者post 默认这get
+     * @param {object} headers 头文件信息
      * @returns {Promise<*>}
      */
-    reqJsonData: async function (url, params = {}, method = 'get') {
+    reqJsonData: async function (url, params = {}, method = 'get', headers = {}) {
         let responseData, apiData = [];
-
         if (method === 'get') {
             responseData = await Axios.get(url, {
-                params
+                params: params,
+                headers: headers
             })
         } else if (method === 'post') {
-            responseData = await Axios.post(url, params)
+            responseData = await Axios.post(url, params, {headers:headers})
         }
 
-        if (responseData && responseData.status == '200' && !_.isEmpty(responseData.data) && responseData.data.status == 200) {
-            return responseData.data.data;
+        if (responseData && responseData.status == 200 && !_.isEmpty(responseData.data) && responseData.data.status == 200) {
+            return responseData.data;
         } else {
             throw new Error(responseData.data.message);
         }

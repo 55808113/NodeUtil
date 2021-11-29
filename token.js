@@ -15,7 +15,7 @@ const token = {
      * @returns {string} 如果是null，表示没有取得
      */
     getTokenString: function (ctx){
-        return ctx.session.token || ctx.request.body.token || ctx.request.query.token || ctx.request.headers['Authorization'] || ctx.request.headers['token'] || ctx.cookies.get('token');
+        return ctx.session.token || ctx.request.body.token || ctx.request.query.token || ctx.request.headers['authorization'] || ctx.request.headers['token'] || ctx.cookies.get('token');
     },
     /**
      * 解密Token
