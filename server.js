@@ -1,8 +1,8 @@
 /*
 字符串转换函数
  */
-const debug = require('debug')('demo:server');
 const http = require('http');
+const debug = require('debug')('demo:server');
 module.exports = {
     //端口
     _port: "3000",

@@ -7,11 +7,8 @@ const dayjs = require('dayjs');
 //const svgCaptcha = require('svg-captcha')
 //数据加密的类
 const uuid = require('node-uuid')
-
 //const svg2png = require("svg2png")
 const $log4js = require('./log4js')
-//node访问其它网站的数据的类
-const Axios = require("axios")
 //常用的js函数类
 const _ = require('lodash')
 
@@ -242,30 +239,7 @@ module.exports = {
     UUID: function () {
         return uuid.v1();
     },
-    /**
-     * nodejs 通过post或者get访问网络资源的函数
-     * @param {string} url 路径
-     * @param {object} params post或者get参数
-     * @param {string} method 提交的方法get或者post 默认这get
-     * @returns {Promise<*>}
-     */
-    reqJsonData: async function (url, params = {}, method = 'get') {
-        let responseData, apiData = [];
 
-        if (method === 'get') {
-            responseData = await Axios.get(url, {
-                params
-            })
-        } else if (method === 'post') {
-            responseData = await Axios.post(url, params)
-        }
-
-        if (responseData && responseData.status == '200' && !_.isEmpty(responseData.data) && responseData.data.status == 200) {
-            return responseData.data.data;
-        } else {
-            throw new Error(responseData.data.message);
-        }
-    },
     /**
      * 判断字符串是否为空
      * @param obj
