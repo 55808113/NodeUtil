@@ -6,6 +6,7 @@
 const nodeExcel = require('excel-export')
 const xlsx = require('xlsx')
 const _ = require('lodash')
+const fs = require('fs')
 //const xlsx = require('xlsx-style');//选择使用xlsx-style可以设置表格样式
 const ejsexcel = require("ejsexcel")
 const path = require('path')
@@ -19,7 +20,7 @@ module.exports = {
     /**
      * 错误的文件目录
      */
-    impFailpath: path.join(__dirname, '/../../upload/ImpErr'),
+    impFailpath: path.join(process.cwd(), '/upload/ImpErr'),
     /**
      * 对导入的headers进行排序和过滤
      * @param headers
@@ -75,25 +76,32 @@ module.exports = {
                 if (v < 10) return '0' + v;
                 return v.toString();
             }
-
-            if (type == "date") {
-                opt.cellType = "string";
-                val = $convert.getDateString(val)
-            } else if (type == "datetime") {
-                opt.cellType = "string";
-                val = $convert.getDateTimeString(val)
-            } else if (type == "bool") {
-                opt.cellType = "string";
-                if (!$util.isEmpty(val)) {
-                    if ($convert.getBool(val)) {
-                        val = "是";
+            switch (type){
+                case "date":
+                    opt.cellType = "string";
+                    val = $convert.getDateString(val)
+                    break;
+                case "datetime":
+                    opt.cellType = "string";
+                    val = $convert.getDateTimeString(val)
+                    break;
+                case "bool":
+                    opt.cellType = "string";
+                    if (!$util.isEmpty(val)) {
+                        if ($convert.getBool(val)) {
+                            val = "是";
+                        } else {
+                            val = "否";
+                        }
                     } else {
-                        val = "否";
+                        val = "";
                     }
-                } else {
-                    val = "";
-                }
+                    break;
+                case "number":
+                    val = $convert.getNumber(val,null)
+                    break;
             }
+
             return val;
         }
 
@@ -102,6 +110,8 @@ module.exports = {
             col.caption = title;
             //所有的属性类型都是string
             col.type = type
+            //width不好使
+            //col.width = 50.7109375
             //日期格式要改变成string否则显示有问题
             col.beforeCellWrite = function (row, cellData, eOpt) {
                 let value = format(cellData, eOpt);
@@ -129,8 +139,19 @@ module.exports = {
             if (item.type == "json") {
                 item.content.forEach(function (n) {
                     let type = "string"
-                    if (n.type == "booleanfield") {
-                        type = "bool"
+                    switch (n.type){
+                        case "booleanfield":
+                            type = "bool"
+                            break;
+                        case "numberfield":
+                            type = "number"
+                            break;
+                        case "datetimefield":
+                            type = "string"
+                            break;
+                        case "datefield":
+                            type = "string"
+                            break;
                     }
                     let col = getCol(n.label, type)
                     conf.cols.push(col);
@@ -185,14 +206,21 @@ module.exports = {
      * @param {string} title 导出的文件名
      * @param {object[]} headerObj 导出的头文件格式对象
      * @param {object[]} rows 导出的数据
+     * 例子 let headers = {};
+     headers.sfzh = $message.card.sfzh;
+     headers.xm = $message.card.xm;
+     headers.xb = $message.card.xb;
+     $excel.expExcel(ctx, $message.card.title, headers, rows);
      */
     expExcel: function (ctx, title, headerObj, rows) {
         let cols = []
         for (let key in headerObj) {
             let item = headerObj[key]
+            let columntype = "string"
+            if (item.type) columntype = item.type
             let col = {
                 name: key,
-                type: item.type,
+                type: columntype,
                 title: item.title,
                 order: item.order,
                 //模板的字段
@@ -215,21 +243,10 @@ module.exports = {
      */
     expExcelbyData: function (ctx, title, colresults, rows) {
         let headers = {};
-        for (let i = 0; i < colresults.length; i++) {
-            let item = colresults[i]
-            if ($convert.getBool(item.sfdc)) continue
-            let columntype = "string"
-            if (item.columntype == "DATETIME") {
-                columntype = "datetime"
-            } else if (item.columntype == "NUMBER") {
-                columntype = "number"
-            }
-            headers[item.tablecolumn] = {
-                title: item.columnname,
-                type: columntype,
-                order: item.order,
-                //模板的字段
-                templaterows: item.templaterows
+        for (let key in colresults) {
+            let item = colresults[key]
+            if ($convert.getBool(item.sfdc)) {
+                headers[key] = item
             }
         }
         this.expExcel(ctx, title, headers, rows);
@@ -243,11 +260,11 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     expExcelbyTemplate: function (ctx, title, templatePath, rows) {
-        let templateFs = $file.readFile(templatePath)
+        let templateFs = $file.readFile(path.join(process.cwd(), templatePath),'')
         return new Promise((resolve, reject) => {
             ejsexcel.renderExcelCb(templateFs, rows, function (err, exlBuf) {
                 if (err) {
-                    reject(new Error('[EXCEL生成失败!]:' + templatePath + err.message))
+                    reject(new Error('[EXCEL生成失败!]:' + path.basename(templatePath) + err.message))
                     return;
                 }
                 ctx.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');

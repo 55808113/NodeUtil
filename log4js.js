@@ -9,7 +9,7 @@ let logger = {}
  * @type {string}
  */
 logger.loggerDir = {
-    root: path.join(__dirname, '/../../../logs/'),
+    root: path.join(process.cwd(), '/logs/'),
     error: "error/",
     response:"responses/",
     sqlInfo: "sqlInfo/",

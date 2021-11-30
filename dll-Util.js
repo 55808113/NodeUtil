@@ -20,7 +20,7 @@ let Serial = function(device= "/dev/ttyACM0", baud= 9600){
     if (!(this instanceof Serial)) {
         return new Serial(device, baud);
     }
-    let _Library = ffi.Library(path.join(__dirname, '/../../lib/Serial'), {
+    let _Library = ffi.Library(path.join(process.cwd(), '/lib/Serial'), {
         'init': [ref.types.int, [ref.types.CString, ref.types.int]],
         'close': [ref.types.void, []],
         'writeChar': [ref.types.void, [ref.types.byte]],
@@ -94,7 +94,7 @@ let HighLow = function (pin, mode) {
     if (!(this instanceof HighLow)) {
         return new HighLow(pin, mode);
     }
-    let _Library = ffi.Library(path.join(__dirname, '/../../lib/HighLow'), {
+    let _Library = ffi.Library(path.join(process.cwd(), '/lib/HighLow'), {
         'init': [ref.types.int, [ref.types.uint8, ref.types.uint8]],
         'pullUpDn': [ref.types.void, [ref.types.uint8]],
         'writeHigh': [ref.types.void, []],
@@ -164,7 +164,7 @@ let LCD1602 = function () {
     if (!(this instanceof LCD1602)) {
         return new LCD1602();
     }
-    let _Library = ffi.Library(path.join(__dirname, '/../../lib/LCD1602'), {
+    let _Library = ffi.Library(path.join(process.cwd(), '/lib/LCD1602'), {
         'init': [ref.types.int, []],
         'clear': [ref.types.void, []],
         'write': [ref.types.void, [ref.types.int, ref.types.int, ref.types.CString]]
@@ -215,7 +215,7 @@ let PID = function (speed, umin, umax) {
     if (!(this instanceof PID)) {
         return new PID(speed, umin, umax);
     }
-    let _Library = ffi.Library(path.join(__dirname, '/../../lib/PID'), {
+    let _Library = ffi.Library(path.join(process.cwd(), '/lib/PID'), {
         'PID_Init': [ref.types.void, [ref.types.float, ref.types.float, ref.types.float]],
         'PID_Reset': [ref.types.void, []],
         'PID_Loc': [ref.types.float, [ref.types.float]],
@@ -283,7 +283,7 @@ let PWMServoDriver = function () {
     if (!(this instanceof PWMServoDriver)) {
         return new PWMServoDriver();
     }
-    let _Library = ffi.Library(path.join(__dirname, '/../../lib/PWMServoDriver'), {
+    let _Library = ffi.Library(path.join(process.cwd(), '/lib/PWMServoDriver'), {
         'init': [ref.types.int, []],
         'setPinAngle': [ref.types.void, [ref.types.uint8, ref.types.float]]
     });
@@ -325,7 +325,7 @@ let PCD8544 = function (sclk = 0, din = 1, dc = 2, cs = 3, rst = 4, contrast = 5
     if (!(this instanceof PCD8544)) {
         return new PCD8544(sclk, din, dc, cs, rst, contrast);
     }
-    let _Library = ffi.Library(path.join(__dirname, '/../../lib/PCD8544'), {
+    let _Library = ffi.Library(path.join(process.cwd(), '/lib/PCD8544'), {
 
         'LCDInit': [ref.types.int, [ref.types.uint8, ref.types.uint8, ref.types.uint8, ref.types.uint8, ref.types.uint8, ref.types.uint8]],
         'LCDclear': [ref.types.void, []],
@@ -484,7 +484,7 @@ let SSD1306 = function () {
     if (!(this instanceof SSD1306)) {
         return new SSD1306();
     }
-    let _Library = ffi.Library(path.join(__dirname, '/../../lib/SSD1306_i2c'), {
+    let _Library = ffi.Library(path.join(process.cwd(), '/lib/SSD1306_i2c'), {
         'ssd1306_begin': [ref.types.int, []],
         'ssd1306_clearDisplay': [ref.types.void, []],
         'ssd1306_invertDisplay': [ref.types.void, [ref.types.uint8]],
