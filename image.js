@@ -15,7 +15,7 @@ module.exports = {
     /**
      * 缩略图目录
      */
-    thumbnailpath: path.join(process.cwd(), "/thumb/"),
+    thumbnailpath: path.join(process.cwd(), "/upload/thumb/"),
     /**
      * 生成缩略图
      * @param {string} filepath 文件路径

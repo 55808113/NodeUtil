@@ -27,7 +27,7 @@ module.exports = {
     /**
      * 使用前需要设置一下phantomPath的路径。
      */
-    phantomPath:"",
+    phantomPath:path.join(process.cwd(),"lib/phantomjs-2.1.1-window/bin/phantomjs.exe"),
     /**
      * 导出pdf文件并下载
      * @param ctx

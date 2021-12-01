@@ -13,7 +13,7 @@ module.exports = {
     /**
      * 上传的路径可以默认设置 $conf.configuration.photopath;
      */
-    uploadpath: path.join(process.cwd(), 'upload'),
+    uploadpath: path.join(process.cwd(), '/upload/upload'),
     /*上传文件
     * uploadpath:上传的文件目录路径
     * fn返回上传的文件名称，大小，路径名称
