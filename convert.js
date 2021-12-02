@@ -127,6 +127,7 @@ module.exports = {
                 $log4js.errLogger(null, err)
             }
         }
+        return null;
     },
     /**
      * json类型转字符串

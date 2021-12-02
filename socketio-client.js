@@ -10,7 +10,7 @@ let socketClient = function () {
     if (!(this instanceof socketClient)) {
         return new socketClient();
     }
-    const socket = ioclient.connect('ws://localhost:' + $server._port, {reconnect: true});
+    const socket = ioclient.connect('ws://localhost:' + $server.serverPort(), {reconnect: true});
     socket.on('connect', function () {
         console.log('Connected!');
     });

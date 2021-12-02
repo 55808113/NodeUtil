@@ -220,6 +220,19 @@ module.exports = {
         })
     },
     /**
+     * 复制文件
+     * @param fromPath
+     * @param toPath
+     */
+    copyFile: function (fromPath, toPath) {
+        // 创建读取流
+        let readable = fs.createReadStream(fromPath);
+        // 创建写入流
+        let writable = fs.createWriteStream(toPath);
+        // 通过管道来传输流
+        readable.pipe(writable);
+    },
+    /**
      * 文件夹复制
      * @param {string} fromPath 源文件路径
      * @param {string} toPath 目标文件路径

@@ -25,8 +25,14 @@ module.exports = {
      */
     resizeimg: function (filepath, thumbnailname, option) {
         let smallfilename = thumbnailname || this.getSmallImgName(filepath);
+        if (_.indexOf(['png', 'jpg', 'jpeg', 'bmp'], $file.extname(filepath).toLowerCase()) == -1)
+        {
+            $file.copyFile(filepath,smallfilename)
+            return false
+        }
         option = option || {}
         option = _.assign({},{width:200},option)
+
         resizeImg(fs.readFileSync(filepath), {width: option.width, height: option.height}).then(function (buf) {
             fs.writeFileSync(smallfilename, buf);
         });
