@@ -47,5 +47,19 @@ module.exports = {
         }
         const id = $common.getValue(osrelease, 'id');
         return (id && id.indexOf('raspbian') > -1);
+    },
+    /**
+     * 检验浏览器是否为PC
+     */
+    checkIsPC: function (ctx){
+        var deviceAgent = ctx.request.headers["user-agent"].toLowerCase();
+        var agentID = deviceAgent.match(/(iphone|ipod|ipad|android)/);
+        if(agentID){
+            //    请求来自手机、pad等移动端
+            return false;
+        }else{
+            //    请求来自PC
+            return true;
+        }
     }
 }
