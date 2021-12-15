@@ -1,10 +1,12 @@
 /**
  常用的加密解密方法
  */
-const CryptoJS = require("crypto-js");
-const AESkey = "www.sunxdd.com";
-//const MD5key = "www.sunxdd.com";
-const SHA256key = "www.sunxdd.com";
+const CryptoJS = require("crypto-js")
+
+const AESkey = "www.sunxdd.com"
+const AESvi = "abcdefg123456"
+//const MD5key = "www.sunxdd.com"
+const SHA256key = "www.sunxdd.com"
 module.exports = {
     /**
      * MD5加密
@@ -27,7 +29,8 @@ module.exports = {
         encrypt: (message) => {//加密
             return CryptoJS.AES.encrypt(message, AESkey, {
                 mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7
+                padding: CryptoJS.pad.Pkcs7,
+                iv: AESvi
             }).toString();
         },
         /**
@@ -38,7 +41,37 @@ module.exports = {
         decrypt: (encrypt) => {//解密
             return CryptoJS.AES.decrypt(encrypt, AESkey, {
                 mode: CryptoJS.mode.CBC,
-                padding: CryptoJS.pad.Pkcs7
+                padding: CryptoJS.pad.Pkcs7,
+                iv: AESvi
+            }).toString(CryptoJS.enc.Utf8);
+        }
+    },
+    /**
+     * DES加密。这个可以实现每次加密都是一样的结果。
+     */
+    DES: {
+        /**
+         * AES加密
+         * @param {string} message 要加密的字符串
+         * @returns {string} 加密后字符串
+         */
+        encrypt: (message) => {//加密
+            return CryptoJS.DES.encrypt(message, CryptoJS.enc.Utf8.parse(AESkey), {
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7,
+                iv: CryptoJS.enc.Utf8.parse(AESvi)
+            }).toString();
+        },
+        /**
+         * AES解密
+         * @param {string} encrypt 要解密的字符串
+         * @returns {string} 解密后的字符串
+         */
+        decrypt: (encrypt) => {//解密
+            return CryptoJS.DES.decrypt(encrypt, CryptoJS.enc.Utf8.parse(AESkey), {
+                mode: CryptoJS.mode.CBC,
+                padding: CryptoJS.pad.Pkcs7,
+                iv: CryptoJS.enc.Utf8.parse(AESvi)
             }).toString(CryptoJS.enc.Utf8);
         }
     },

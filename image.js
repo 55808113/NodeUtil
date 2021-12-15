@@ -66,11 +66,19 @@ module.exports = {
         return path.join(this.thumbnailpath, $file.MD5FileName(filepath));
     },
     /**
+     * 能否生成缩略图
+     * @param filepath 图片路径
+     * @returns {boolean} 返回能否生成缩略图
+     */
+    isThumbnail: function (filepath){
+        return _.indexOf(['png', 'jpg', 'jpeg', 'bmp'], $file.extname(filepath)) != -1
+    },
+    /**
      * 生成缩略图返回名称
      * @param {string} filepath 图片文件的目录或者文件
      * @param {json} option 参数
      */
-    thumbnail: function (filepath, option) {
+    thumbnail: function (filepath, option= null) {
         /**
          * 文件目录批量修改大小，线程的。
          * @param params
@@ -163,13 +171,14 @@ module.exports = {
                 height: option.height
             });
         }else{
-            if (_.indexOf(['png', 'jpg', 'jpeg', 'bmp'], $file.extname(filepath).toLowerCase()) == -1) return false
-            resizeimg({
-                src: filepath,
-                dest: obj.getThumbnailpath(filepath),
-                width: option.width,
-                height: option.height
-            })
+            if (obj.isThumbnail(filepath)) {
+                resizeimg({
+                    src: filepath,
+                    dest: obj.getThumbnailpath(filepath),
+                    width: option.width,
+                    height: option.height
+                })
+            }
         }
         /*gm(filepath).thumb(option.width, // Width
             option.height, // Height

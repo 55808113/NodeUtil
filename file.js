@@ -354,7 +354,9 @@ module.exports = {
                 ctx.attachment(filename);
             }
             if (cache) {
-                ctx.set('etag', 'max-age');
+                //ctx.set('etag', 'max-age');
+                //ctx.set('Etag', '326ae27d85f6d847f819e19955c0f0aa');
+                ctx.set('Cache-Control', 'max-age=3600000');
             }
             await sendfile(ctx, filepath);
         } else {
