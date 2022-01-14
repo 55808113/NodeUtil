@@ -7,14 +7,47 @@ const $log4js = require('./log4js')
 
 module.exports = {
     /**
+     * resultSet记录集对象转换成json数组格式
+     * @param resultSet
+     * @private
+     */
+    _resultSetToJson: async function (resultSet){
+        let result = [];
+        //得到字符的名称
+        let fieldnames = resultSet.metaData
+        //let rows = await resultSet.getRows()
+        let row;
+        //把数据返回到一个数组中。
+        while (row = await resultSet.getRow()) {
+            let resultRow = {}
+            for (let i = 0; i < fieldnames.length; i++) {
+                resultRow[fieldnames[i].name.toLowerCase()] = row[i]
+            }
+            result.push(resultRow)
+        }
+        return result;
+    },
+    /**
      * Create a new Pool instance.
      * @param {object|string} config Configuration or connection string for new MySQL connections
      * @return {Pool} A new MySQL pool
      * @public
      */
-    createPool: function (config){
+    createPool: function (config,callback){
         // 使用连接池，提升性能
-        oracle.createPool(config);
+        oracle.createPool(config, function(err, pool) {
+            if (err) {
+                console.log(err.message)
+                console.log("Failed to create oracle db pool..." + pool.poolAlias);
+                if (callback)
+                    callback(err);
+            } else {
+                console.log("create oracle db pool..." + pool.poolAlias);
+                if (callback)
+                    callback();
+            }
+        });
+        /*await oracle.createPool(config)*/
     },
     /**
      * 拼写sql存储过程语句
@@ -31,7 +64,7 @@ module.exports = {
                 if (b) {
                     result += ",";
                 }
-                result += "?";
+                result += ":"+(i+1);
                 b = true;
             }
             result += ")";
@@ -58,6 +91,49 @@ module.exports = {
             console.log(err.message)
             throw err;
         }
+    },
+    /**
+     * 存储过程查询需要的
+     * @param poolAlias
+     * @param sql
+     * @param param
+     * @returns {Promise<*[]>}
+     */
+    querySqlPool: async function (poolAlias, sql, param) {
+        let result = [];
+        try {
+            let connection = await this.getConn(poolAlias);
+            try {
+                //第一个参数是游标参数需要设置一下
+                param.splice(0,0,{ type: oracle.CURSOR, dir: oracle.BIND_OUT  });
+                let data = await this.execSqlByConn(connection, sql, param)
+                //得到游标返回的记录集
+                const resultSet = data.outBinds[0];
+                //得到字符的名称
+                result = await this._resultSetToJson(resultSet)
+                await resultSet.close();
+
+                //把数据返回到一个数组中。
+                /*while (row = await resultSet.getRow()) {
+                    let resultRow = []
+                    for (let i = 0; i < fieldnames.length; i++) {
+                        let obj = {}
+                        obj[fieldnames[i].name.toLowerCase()] = row[i]
+                        resultRow.push(obj)
+                    }
+                    result.push(resultRow)
+                }*/
+                //关闭记住集
+                  // always close the ResultSet
+            } catch (err) {
+                throw err
+            } finally {
+                connection.release();
+            }
+        } catch (err) {
+            throw err
+        }
+        return result;
     },
     /**
      * 执行sql语句，自己传pool对象
@@ -129,6 +205,15 @@ module.exports = {
      */
     execSql: async function (sql, param) {
         return await this.execSqlPool(null, sql, param);
+    },
+    /**
+     * 返回记录集的
+     * @param {string} sql sql语句
+     * @param {object[]} param sql参数
+     * @returns {Promise<*[]>}
+     */
+    querySql: async function (sql, param) {
+        return await this.querySqlPool(null, sql, param);
     },
     /**
      * 执行带事务的sql语句
