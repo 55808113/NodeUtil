@@ -1,26 +1,47 @@
 /**
- * mysql数据库相关函数
+ * mssql数据库相关函数
  *
  * */
-const mysql = require('mysql')
-const _ = require('lodash')
+const mssql = require('mssql')
 const $log4js = require('./log4js')
-const $util = require('./util')
-const $convert = require('./convert')
 
 module.exports = {
+    /**
+     * resultSet记录集对象转换成json数组格式
+     * @param resultSet
+     * @private
+     */
+    _resultSetToJson: async function (resultSet){
+        let result = [];
+        //得到字符的名称
+        let fieldnames = resultSet.metaData
+        //let rows = await resultSet.getRows()
+        let row;
+        //把数据返回到一个数组中。
+        while (row = await resultSet.getRow()) {
+            let resultRow = {}
+            for (let i = 0; i < fieldnames.length; i++) {
+                resultRow[fieldnames[i].name.toLowerCase()] = row[i]
+            }
+            result.push(resultRow)
+        }
+        return result;
+    },
+    //连接池
+    pool: null,
     /**
      * Create a new Pool instance.
      * @param {object|string} config Configuration or connection string for new MySQL connections
      * @return {Pool} A new MySQL pool
      * @public
      */
-    createPool: function (config){
-        this.pool = mysql.createPool(config)
-        return this.pool
+    createPool: async function (config,callback){
+        // 使用连接池，提升性能
+        if(!(this.pool && this.pool.connected)) {
+            this.pool = await mssql.connect(config);
+        }
+        return this.pool;
     },
-    //连接池
-    pool: null,
     /**
      * 拼写sql存储过程语句
      * @param {string} sql sql语句
@@ -36,7 +57,7 @@ module.exports = {
                 if (b) {
                     result += ",";
                 }
-                result += "?";
+                result += ":"+(i+1);
                 b = true;
             }
             result += ")";
@@ -47,26 +68,20 @@ module.exports = {
     },
     /**
      * 得到getConnection
-     * @returns {Promise<unknown>}
+     * @returns {Promise<PreparedStatement>}
      */
-    getConn: function () {
-        let self = this;
-        return new Promise((resolve, reject) => {
-            const start = new Date()
-            self.pool.getConnection(function (err, connection) {
-                const ms = new Date() - start
-                if (err) {
-                    $log4js.sqlErrLogger("创建连接池", "错误", err, ms)
-                    reject(err)
-                    return;
-                }
-                //$log4js.sqlInfoLogger("创建连接池", "成功", ms)
-                resolve(connection)
-            })
-        })
+    getConn: async function () {
+        try{
+            let ps = new mssql.PreparedStatement(this.pool);
+            return ps;
+        }catch(err){
+            $log4js.sqlErrLogger("创建连接池", "错误", err)
+            console.log(err.message)
+            throw err;
+        }
     },
     /**
-     * 执行sql语句，自己传pool对象
+     * 执行sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<number>}
@@ -75,13 +90,12 @@ module.exports = {
         let result = 0
         params = params || []
         try {
-            let connection = await this.getConn();
+            let ps = await this.getConn();
             try {
-                result = await this.execSqlByConn(connection, sql, params)
+                result = await this.execSqlByConn(ps, sql, params)
             } catch (err) {
                 throw err
             } finally {
-                this.pool.releaseConnection(connection)
             }
         } catch (err) {
             throw err
@@ -90,29 +104,44 @@ module.exports = {
     },
     /**
      * 执行带事务的sql语句
+     * @param {string} poolAlias 连接池对象
      * @param {string} sql sql语句
-     * @param {object[]} params sql参数
+     * @param {object[]} param sql参数
+     * @param pool
      * @returns {Promise<number>}
      */
-    execSqlByTransaction: async function (sql, params) {
+    execSqlByTransaction: async function (sql, param) {
         let result = 0
         try {
-            let connection = await this.getConn();
-            await this.beginTransaction(connection);
-            try {
-                result = await this.execSqlByConn(connection, sql, params)
-                connection.commit((error) => {
-                    if(error) {
-                        throw error;
-                        console.log('事务提交失败')
-                    }
+            const transaction = new mssql.Transaction(this.pool)
+            transaction.begin(err => {
+                // ... error checks
+
+                let rolledBack = false
+
+                transaction.on('rollback', aborted => {
+                    // emited with aborted === true
+
+                    rolledBack = true
                 })
-            } catch (err) {
-                connection.rollback();
-                throw err
-            } finally {
-                connection.release();
-            }
+
+                new mssql.Request(transaction)
+                    .query('insert into mytable (bitcolumn) values (2)', (err, result) => {
+                        // insert should fail because of invalid value
+
+                        if (err) {
+                            if (!rolledBack) {
+                                transaction.rollback(err => {
+                                    // ... error checks
+                                })
+                            }
+                        } else {
+                            transaction.commit(err => {
+                                // ... error checks
+                            })
+                        }
+                    })
+            })
         } catch (err) {
             throw err
         }
@@ -178,42 +207,37 @@ module.exports = {
         return await this.execSql(sql);
     },
     /**
-     * 开启事务：
-     * @param connection
-     * @returns {Promise<boolean>} 返回true成功，false失败
-     */
-    beginTransaction: function (connection){
-        return new Promise((resolve, reject) => {
-            connection.beginTransaction(err => {
-                if (err) {
-                    reject(err)
-                }
-                resolve(true)
-            })
-        })
-    },
-    /**
      * 执行sql语句
-     * @param {object} connection 连接对象
+     * @param {PreparedStatement} ps 连接对象
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<unknown>}
      */
-    execSqlByConn: function (connection, sql, params) {
-        const start = new Date()
+    execSqlByConn: function (ps, sql, params) {
         let sqlStr = this.getSqlStr(sql, params);
         return new Promise((resolve, reject) => {
-            connection.query(sqlStr, params, (err, result) => {
-                //connection.release();
-                const ms = new Date() - start
-                if (err) {
-                    $log4js.sqlErrLogger(sqlStr, params, err, ms)
+            if (params) {
+                for (let index in params) {
+                    if (typeof params[index] == "number") {
+                        ps.input(index, mssql.Int);
+                    } else if (typeof params[index] == "string") {
+                        ps.input(index, mssql.NVarChar);
+                    }
+                }
+            }
+            ps.prepare(sqlStr, function (err) {
+                if (err){
                     reject(err)
                     return;
                 }
-                $log4js.sqlInfoLogger(sqlStr, params, ms)
-                resolve(result)
-            })
+                ps.execute(params, function (err, recordset) {
+                    resolve(recordset)
+                    ps.unprepare(function (err) {
+                        if (err)
+                            reject(err)
+                    });
+                });
+            });
         })
-    }
+    },
 };

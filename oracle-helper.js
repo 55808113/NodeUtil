@@ -52,15 +52,15 @@ module.exports = {
     /**
      * 拼写sql存储过程语句
      * @param {string} sql sql语句
-     * @param {object[]} param 参数数组
+     * @param {object[]} params 参数数组
      * @returns {*}
      */
-    getSqlStr: function (sql, param) {
+    getSqlStr: function (sql, params) {
         let result = "";
         if (sql.indexOf("call ") != -1) {
             result = sql.replace(")", "");
             let b = (sql.length - sql.indexOf("(")) > 2;
-            for (let i = 0; i < param.length; i++) {
+            for (let i = 0; i < params.length; i++) {
                 if (b) {
                     result += ",";
                 }
@@ -94,19 +94,19 @@ module.exports = {
     },
     /**
      * 存储过程查询需要的
-     * @param poolAlias
-     * @param sql
-     * @param param
+     * @param {string} poolAlias
+     * @param {string} sql
+     * @param {object[]} params
      * @returns {Promise<*[]>}
      */
-    querySqlPool: async function (poolAlias, sql, param) {
+    querySqlPool: async function (poolAlias, sql, params) {
         let result = [];
         try {
             let connection = await this.getConn(poolAlias);
             try {
                 //第一个参数是游标参数需要设置一下
-                param.splice(0,0,{ type: oracle.CURSOR, dir: oracle.BIND_OUT  });
-                let data = await this.execSqlByConn(connection, sql, param)
+                params.splice(0,0,{ type: oracle.CURSOR, dir: oracle.BIND_OUT  });
+                let data = await this.execSqlByConn(connection, sql, params)
                 //得到游标返回的记录集
                 const resultSet = data.outBinds[0];
                 //得到字符的名称
@@ -139,15 +139,15 @@ module.exports = {
      * 执行sql语句，自己传pool对象
      * @param {string} poolAlias 连接池
      * @param {string} sql sql语句
-     * @param {object[]} param sql参数
+     * @param {object[]} params sql参数
      * @returns {Promise<number>}
      */
-    execSqlPool: async function (poolAlias, sql, param) {
+    execSqlPool: async function (poolAlias, sql, params) {
         let result = 0
         try {
             let connection = await this.getConn(poolAlias);
             try {
-                result = await this.execSqlByConn(connection, sql, param)
+                result = await this.execSqlByConn(connection, sql, params)
             } catch (err) {
                 throw err
             } finally {
@@ -162,16 +162,15 @@ module.exports = {
      * 执行带事务的sql语句
      * @param {string} poolAlias 连接池对象
      * @param {string} sql sql语句
-     * @param {object[]} param sql参数
-     * @param pool
+     * @param {object[]} params sql参数
      * @returns {Promise<number>}
      */
-    execSqlByTransactionPool: async function (pool, sql, param) {
+    execSqlByTransactionPool: async function (poolAlias, sql, params) {
         let result = 0
         try {
-            let connection = await this.getConn(pool);
+            let connection = await this.getConn(poolAlias);
             try {
-                result = await this.execSqlByConn(connection, sql, param)
+                result = await this.execSqlByConn(connection, sql, params)
                 //提交事务
                 await connection.commit();
             } catch (err) {
@@ -189,40 +188,39 @@ module.exports = {
      * 执行sql语句
      * @param {object} connection 连接对象
      * @param {string} sql sql语句
-     * @param {object[]} param sql参数
+     * @param {object[]} params sql参数
      * @returns {Promise<unknown>}
      */
-    execSqlByConn: async function (connection, sql, param) {
-        let sqlStr = this.getSqlStr(sql, param);
-        let result = await connection.execute(sqlStr, param);
+    execSqlByConn: async function (connection, sql, params) {
+        let sqlStr = this.getSqlStr(sql, params);
+        let result = await connection.execute(sqlStr, params);
         return result;
     },
     /**
      * 执行sql语句
      * @param {string} sql sql语句
-     * @param {object[]} param sql参数
+     * @param {object[]} params sql参数
      * @returns {Promise<number>}
      */
-    execSql: async function (sql, param) {
-        return await this.execSqlPool(null, sql, param);
+    execSql: async function (sql, params) {
+        return await this.execSqlPool(null, sql, params);
     },
     /**
      * 返回记录集的
      * @param {string} sql sql语句
-     * @param {object[]} param sql参数
+     * @param {object[]} params sql参数
      * @returns {Promise<*[]>}
      */
-    querySql: async function (sql, param) {
-        return await this.querySqlPool(null, sql, param);
+    querySql: async function (sql, params) {
+        return await this.querySqlPool(null, sql, params);
     },
     /**
      * 执行带事务的sql语句
-     * @param {} sql
-     * @param {} param
-     * @param pool
+     * @param {string} sql
+     * @param {object[]} params
      * @returns {Promise<number>}
      */
-    execSqlByTransaction: async function (sql, param) {
-        return await this.execSqlByTransactionPool(null, sql, param);
+    execSqlByTransaction: async function (sql, params) {
+        return await this.execSqlByTransactionPool(null, sql, params);
     },
 };

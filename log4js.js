@@ -131,7 +131,7 @@ logger.sqlInfoLogger = (sql, param, sqlTime) => {
  * @param {object} error 错误信息
  * @param sqlTime 执行时间
  */
-logger.sqlErrLogger = (sql, param, error, sqlTime) => {
+logger.sqlErrLogger = (sql, param, error, sqlTime=0) => {
     let log
     log = {sql, param, error, sqlTime}
     console.error(error);
