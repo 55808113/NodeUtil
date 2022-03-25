@@ -156,24 +156,22 @@ module.exports = {
         if (pageSize!=-1) {
             bgnID = (pageIndex - 1) * pageSize
             if ($util.isNotEmpty(sort)) {
-                sqlOrder =  " " + " order by " + sort + " " + order
+                sqlOrder =  `  order by ${sort} ${order}`
             }
-            sql = "select count(0) as totalCount from " + tablename;
-            sql += " where 1=1 " + sqlData
+            sql = `select count(0) as totalCount from ${tablename} where 1=1 ${sqlData}`
             //得到总数
             let row = await this.execSql(sql);
             totalCount = row[0].totalCount
         }
-        sql = "select " + totalCount + " AS TOTAL,a.* FROM " + tablename
-        sql += " " + "a JOIN (select " + options.id + " from " + tablename
-        sql +=  " where 1=1 " + sqlData
+        sql = `select ${totalCount} AS TOTAL,a.* FROM ${tablename}
+            a JOIN (select ${options.id} from ${tablename}
+             where 1=1 ${sqlData}`;
         if (pageSize!=-1){
-            sql +=  " " + sqlOrder
-            sql +=  " " + "limit " + bgnID + "," + pageSize
+            sql += ` ${sqlOrder} limit ${bgnID},${pageSize}`
         }
-        sql +=  " " + ") b ON a." + options.id + " = b."+options.id
+        sql +=  ` ) b ON a.${options.id} = b.${options.id}`
         if (pageSize!=-1) {
-            sql += " " + sqlOrder
+            sql += ` ${sqlOrder}`
         }
         return await this.execSql(sql);
     },

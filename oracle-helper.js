@@ -186,7 +186,7 @@ module.exports = {
     },
     /**
      * 执行sql语句
-     * @param {object} connection 连接对象
+     * @param {Connection} connection 连接对象
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<unknown>}
