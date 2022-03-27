@@ -65,6 +65,45 @@ module.exports = {
         }
     },
     /**
+     * 向前台返回JSON方法的简单封装这个是代footer的数据集合。
+     * @param ctx
+     * @param {object[]} data 记录集必须是两个数据集合。data[0]=rows,data[1]=footer
+     * @param {int} pageIndex 当前页
+     * @param {int} pageSize 每个个数
+     * @param {object} params 返回的其它参数
+     */
+    jsonWriteEasyuiByFooter: function (ctx, data, pageIndex = 1, pageSize = 20, params = {}) {
+        if (typeof data === undefined) {
+            ctx.body = {
+                status: 500,
+                message: '操作失败'
+            };
+        } else {
+            let total = 0;
+            let rows;
+            let footer;
+            if (this.isNotEmpty(data)&&data.length==2){
+                rows = data[0]
+                footer = data[1]
+                if (rows.length > 0) {
+                    total = rows[0].TOTAL;
+                } else {
+                    pageIndex = 1;
+                }
+            }
+
+            let easyuiData = {
+                status: 200,
+                pageIndex: pageIndex,
+                pageSize: pageSize,
+                total: total,
+                rows: rows,
+                footer: footer
+            };
+            ctx.body = _.assign(easyuiData, params)
+        }
+    },
+    /**
      * 返回treegrid的json对象
      * @param ctx
      * @param rows 记录集

@@ -204,7 +204,7 @@ module.exports = {
      * 导出excel
      * @param ctx
      * @param {string} title 导出的文件名
-     * @param {object[]} headerObj 导出的头文件格式对象
+     * @param {object} headerObj 导出的头文件格式对象
      * @param {object[]} rows 导出的数据
      * 例子 let headers = {};
      headers.sfzh = $message.card.sfzh;

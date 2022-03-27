@@ -97,7 +97,7 @@ module.exports = {
      * 执行sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
-     * @returns {Promise<number>}
+     * @returns {Promise<object>}
      */
     execSql: async function (sql, params) {
         let result = 0
@@ -124,7 +124,7 @@ module.exports = {
      * @param {string} sql sql语句
      * @param {object[]} param sql参数
      * @param pool
-     * @returns {Promise<number>}
+     * @returns {Promise<object>}
      */
     execSqlByTransaction: async function (sql, param) {
         let result = 0
@@ -255,13 +255,13 @@ module.exports = {
      * @param {Connection} connection 连接对象
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
-     * @returns {Promise<unknown>}
+     * @returns {Promise<object>}
      */
     execSqlByConn: function (connection, sql, params) {
         let sqlStr = this.getSqlStr(sql, params);
         return new Promise((resolve, reject) => {
             // Print the rows read
-            let result = 0;
+            let result = null;
             // Read all rows from table
             let request = new Request(
                 sqlStr,
@@ -270,7 +270,7 @@ module.exports = {
                         reject(err)
                     } else {
                         //删除时可以知识处理了多少数据
-                        if (result==0){
+                        if (result==null&&rowCount!=0){
                             result = rowCount
                         }
                         resolve(result)
@@ -287,7 +287,7 @@ module.exports = {
             }
             request.on('row', function(columns) {
                 //当是返回的集合时设置为数组
-                if (result==0){
+                if (result==null){
                     result = []
                 }
                 let row = {};
