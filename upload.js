@@ -118,6 +118,10 @@ module.exports = {
                 console.log('err...')
                 reject(err)
             })
+            //下面的语句把post里的其它参数数据赋值到ctx.request.body里
+            _emmiter.on('field', (fieldName, value) => {
+                ctx.request.body[fieldName] = value
+            })
             ctx.req.pipe(_emmiter)
         })
     },

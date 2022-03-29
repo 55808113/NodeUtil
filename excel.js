@@ -57,6 +57,9 @@ module.exports = {
             case "float":
                 result = "number";
                 break;
+            case "double":
+                result = "number";
+                break;
         }
         return result;
     },
@@ -306,7 +309,7 @@ module.exports = {
                 for (let i = 0; i < rows.length; i++) {
                     let item = rows[i];
                     try {
-                        let param = callbackParam(item)
+                        let param = callbackParam(ctx,item)
                         if (!param) {
                             throw "callbackParam参数没有设置插入的数据！"
                         }

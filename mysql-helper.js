@@ -60,7 +60,7 @@ module.exports = {
                     reject(err)
                     return;
                 }
-                console.log("mysql创建连接池成功！")
+                //console.log("mysql创建连接池成功！")
                 //$log4js.sqlInfoLogger("创建连接池", "成功", ms)
                 resolve(connection)
             })

@@ -35,8 +35,8 @@ module.exports = {
         return result;
     },
     //连接
-    connection: null,
-
+    //connection: null,
+    config:null,
     /**
      * Create a new Pool instance.
      * @param {object|string} config Configuration or connection string for new MySQL connections
@@ -44,9 +44,10 @@ module.exports = {
      * @public
      */
     createPool: async function (config){
+        this.config = config
         //let self = this;
         // 使用连接池，提升性能
-        if(!(this.connection && !this.connection.closed && this.connection.state.name!="Final")) {
+        /*if(!(this.connection && !this.connection.closed && this.connection.state.name!="Final")) {
             if (!config&&this.connection) {
                 config = this.connection.config
             }
@@ -60,7 +61,7 @@ module.exports = {
                 }
             });
         }
-        return this.connection
+        return this.connection*/
     },
     /**
      * 拼写sql存储过程语句
@@ -91,7 +92,18 @@ module.exports = {
      * @returns {Promise<Connection>}
      */
     getConn: function () {
-        return this.connection
+        return new Promise((resolve, reject) => {
+            let connection = new Connection(this.config);
+            connection.connect(function (err) {
+                if (err) {
+                    $log4js.sqlErrLogger("创建连接", "错误", err)
+                    console.log(err.message)
+                    reject(err)
+                } else {
+                    resolve(connection)
+                }
+            });
+        })
     },
     /**
      * 执行sql语句
@@ -103,13 +115,13 @@ module.exports = {
         let result = 0
         params = params || []
         try {
-            let connection = this.getConn();
+            let connection = await this.getConn();
             try {
                 result = await this.execSqlByConn(connection, sql, params)
             } catch (err) {
                 throw err
             } finally {
-                //connection.close();
+                connection.close();
             }
         } catch (err) {
             throw err
