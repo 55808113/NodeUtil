@@ -194,7 +194,7 @@ module.exports = {
     selectAllByTableFieldName: async function(tablename) {
         let sql = `SELECT col.colorder AS id,
             col.name AS columnName,
-            ISNULL( ep.[value], '' ) AS columnComment,
+            ISNULL( ep.[value], col.name ) AS columnComment,
             t.name AS dataType,
             col.length AS dataLength,
             CASE WHEN EXISTS (
@@ -235,19 +235,19 @@ module.exports = {
      */
     selectAllByTablePage: async function(tablename, pageIndex, pageSize, order, sort, sqlData, options) {
         options = _.assign({},{id:"pkid"}, options)
-        let sqlOrder = ""
+        //let sqlOrder = ""
         let sql = ""
         let totalCount = 0
         let bgnID = 1
         let endID = 20
         sqlData = $convert.getString(sqlData)
         if (pageSize!=-1) {
-            bgnID = (pageIndex - 1) * pageSize
+            bgnID = (pageIndex - 1) * pageSize + 1
             endID = pageIndex * pageSize
             if (!$util.isNotEmpty(sort)) {
                 //当没有排序时需要定义一个排序的列，就把主键定义为排序的列
                 sort = options.id
-                order = ASC
+                order = "ASC"
             }
             sql = `select count(0) as totalCount from ${tablename} where 1=1 ${sqlData}`;
             //得到总数

@@ -30,6 +30,52 @@ module.exports = {
 
     },
     /**
+     * mssql的类型转换为excel的类型
+     * @param datatype
+     */
+    convertMssqlType: function (datatype){
+        let result = datatype
+        switch (datatype){
+            case "bit":
+                result = "bool";
+                break;
+            case "char":
+                result = "string";
+                break;
+            case "nchar":
+                result = "string";
+                break;
+            case "varchar":
+                result = "string";
+                break;
+            case "nvarchar":
+                result = "string";
+                break;
+            case "text":
+                result = "string";
+                break;
+            case "int":
+                result = "number";
+                break;
+            case "smallint":
+                result = "number";
+                break;
+            case "float":
+                result = "number";
+                break;
+            case "double":
+                result = "number";
+                break;
+            case "real":
+                result = "number";
+                break;
+            case "numeric":
+                result = "number";
+                break;
+        }
+        return result;
+    },
+    /**
      * mysql的类型转换为excel的类型
      * @param datatype
      */
