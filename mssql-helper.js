@@ -63,12 +63,12 @@ module.exports = {
         }
         return this.connection*/
     },
-    /**
+    /*/!**
      * 拼写sql存储过程语句
      * @param {string} sql sql语句
      * @param {object[]} params 参数数组
      * @returns {*}
-     */
+     *!/
     getSqlStr: function (sql, params) {
         let result = "";
         if (sql.indexOf("call ") != -1) {
@@ -86,7 +86,7 @@ module.exports = {
             result = sql;
         }
         return result;
-    },
+    },*/
     /**
      * 得到getConnection
      * @returns {Promise<Connection>}
@@ -127,8 +127,23 @@ module.exports = {
             throw err
         }
         return result;
-
-
+    },
+    execProcedure: async function (sql, params) {
+        let result = 0
+        params = params || []
+        try {
+            let connection = await this.getConn();
+            try {
+                result = await this.execProcedureByConn(connection, sql, params)
+            } catch (err) {
+                throw err
+            } finally {
+                connection.close();
+            }
+        } catch (err) {
+            throw err
+        }
+        return result;
     },
     /**
      * 执行带事务的sql语句
@@ -270,13 +285,12 @@ module.exports = {
      * @returns {Promise<object>}
      */
     execSqlByConn: function (connection, sql, params) {
-        let sqlStr = this.getSqlStr(sql, params);
         return new Promise((resolve, reject) => {
             // Print the rows read
             let result = null;
             // Read all rows from table
             let request = new Request(
-                sqlStr,
+                sql,
                 function(err, rowCount) {
                     if (err) {
                         reject(err)
@@ -312,6 +326,216 @@ module.exports = {
             //connection.callProcedure()
             // Execute SQL statement
             connection.execSql(request);
+        })
+    },
+    /**
+     * 得到存储过程参数名称
+     * @param {Connection} connection 连接对象
+     * @param {string} ProcedureName
+     * @returns {object}
+     * @private
+     */
+    _getProcedureParameters:async function (connection, ProcedureName){
+        let sql = `
+        SELECT
+            sp.object_id AS FunctionId,
+            sp.name AS FunctionName,
+            ( CASE WHEN param.is_output = 1 THEN 'OUTPUT' ELSE 'IN' END ) AS ParamType,
+            ISNULL( param.name, '' ) AS ParamName,
+            ISNULL( usrt.name, '' ) AS [DataType],
+            ISNULL( baset.name, '' ) AS [SystemType],
+            CAST (
+                CASE
+                    WHEN baset.name IS NULL THEN
+                    0
+                    WHEN baset.name IN ( 'nchar', 'nvarchar' ) AND param.max_length <> - 1 THEN
+                    param.max_length / 2 ELSE param.max_length
+                    END AS INT
+                ) AS [Length],
+            ISNULL( parameter_id, 0 ) AS SortId,
+            '' AS ParamReamrk
+        FROM
+        sys.objects AS sp
+        INNER JOIN sys.schemas b ON sp.schema_id = b.schema_id
+        LEFT OUTER JOIN sys.all_parameters AS param ON param.object_id = sp.object_id
+        LEFT OUTER JOIN sys.types AS usrt ON usrt.user_type_id = param.user_type_id
+        LEFT OUTER JOIN sys.types AS baset ON ( baset.user_type_id = param.system_type_id AND baset.user_type_id = baset.system_type_id )
+        OR (
+            ( baset.system_type_id = param.system_type_id )
+            AND ( baset.user_type_id = param.user_type_id )
+            AND ( baset.is_user_defined = 0 )
+            AND ( baset.is_assembly_type = 1 )
+        )
+        LEFT OUTER JOIN sys.extended_properties E ON sp.object_id = E.major_id
+        WHERE sp.object_id = OBJECT_ID( @A1)
+        AND sp.type IN ( 'FN', 'IF', 'TF', 'P' )
+        AND ISNULL( sp.is_ms_shipped, 0 ) = 0
+        AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
+        ORDER BY sp.name , param.parameter_id ASC;`
+        return await this.execSqlByConn(connection,sql,[ProcedureName])
+    },
+    /**
+     * 得到参数的实际类型
+     * @param {string} parametersType
+     * @returns {Promise<object>}
+     * @private
+     */
+    _getParametersType: function (parametersType){
+        let result = TYPES.NVarChar
+        switch (parametersType) {
+            case 'tinyint':
+                result = TYPES.TinyInt
+                break;
+            case 'bit':
+                result = TYPES.Bit
+                break;
+            case 'smallint':
+                result = TYPES.SmallInt
+                break;
+            case 'int':
+                result = TYPES.Int
+                break;
+            case 'smalldatetime':
+                result = TYPES.SmallDateTime
+                break;
+            case 'real':
+                result = TYPES.Real
+                break;
+            case 'money':
+                result = TYPES.Money
+                break;
+            case 'datetime':
+                result = TYPES.DateTime
+                break;
+            case 'float':
+                result = TYPES.Float
+                break;
+            case 'decimal':
+                result = TYPES.Decimal
+                break;
+            case 'numeric':
+                result = TYPES.Numeric
+                break;
+            case 'smallmoney':
+                result = TYPES.SmallMoney
+                break;
+            case 'bigint':
+                result = TYPES.BigInt
+                break;
+            case 'image':
+                result = TYPES.Image
+                break;
+            case 'text':
+                result = TYPES.Text
+                break;
+            case 'uniqueIdentifier':
+                result = TYPES.UniqueIdentifier
+                break;
+            case 'ntext':
+                result = TYPES.NText
+                break;
+            case 'varbinary':
+                result = TYPES.VarBinary
+                break;
+            case 'varchar':
+                result = TYPES.VarChar
+                break;
+            case 'binary':
+                result = TYPES.Binary
+                break;
+            case 'char':
+                result = TYPES.Char
+                break;
+            case 'nvarchar':
+                result = TYPES.NVarChar
+                break;
+            case 'nchar':
+                result = TYPES.NChar
+                break;
+            case 'xml':
+                result = TYPES.Xml
+                break;
+            case 'time':
+                result = TYPES.Time
+                break;
+            case 'date':
+                result = TYPES.Date
+                break;
+            case 'datetime2':
+                result = TYPES.DateTime2
+                break;
+            case 'datetimeoffset':
+                result = TYPES.DateTimeOffset
+                break;
+            case 'udt':
+                result = TYPES.UDT
+                break;
+            case 'tvp':
+                result = TYPES.TVP
+                break;
+            case 'variant':
+                result = TYPES.Variant
+                break;
+        }
+        return result
+    },
+    /**
+     * 执行sql语句
+     * @param {Connection} connection 连接对象
+     * @param {string} ProcedureName sql语句
+     * @param {object[]} params sql参数
+     * @returns {Promise<object>}
+     */
+    execProcedureByConn:async function (connection, ProcedureName, params) {
+        let self = this
+        let rsParams = await self._getProcedureParameters(connection,ProcedureName)
+        return new Promise((resolve, reject) => {
+            // Print the rows read
+            let result = null;
+            // Read all rows from table
+            let request = new Request(
+                ProcedureName,
+                function(err, rowCount) {
+                    if (err) {
+                        reject(err)
+                    } else {
+                        //删除时可以知识处理了多少数据
+                        if (result==null&&rowCount!=0){
+                            result = rowCount
+                        }
+                        resolve(result)
+                    }
+                });
+            if ($util.isNotEmpty(rsParams)) {
+                if ($util.isEmpty(params) || rsParams.length!=params.length){
+                    reject("存储过程：" + ProcedureName + "传入的参数与实际参数个数不符！")
+                    return;
+                }
+                for (let i = 0; i < rsParams.length; i++) {
+                    let param = params[i]
+                    let rsparam = rsParams[i]
+                    let paramType = self._getParametersType(rsparam.DataType)
+                    request.addParameter(rsparam.ParamName.replace("@",""), paramType, param);
+                }
+            }
+            request.on('returnValue', (paramName, value, metadata) => {
+
+            });
+            request.on('row', function(columns) {
+                //当是返回的集合时设置为数组
+                if (result==null){
+                    result = []
+                }
+                let row = {};
+                columns.forEach(function(column)
+                {
+                    row[column.metadata.colName] = column.value;
+                });
+                result.push(row);
+            });
+            //connection.callProcedure()
+            // Execute SQL statement
+            connection.callProcedure(request);
         })
     },
 };
