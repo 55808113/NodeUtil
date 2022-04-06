@@ -47,7 +47,7 @@ module.exports = {
     },
     /**
      * 得到getConnection
-     * @returns {Promise<unknown>}
+     * @returns {Promise<Connection>}
      */
     getConn: function () {
         let self = this;
@@ -178,7 +178,7 @@ module.exports = {
     },
     /**
      * 开启事务：
-     * @param connection
+     * @param {Connection} connection
      * @returns {Promise<boolean>} 返回true成功，false失败
      */
     beginTransaction: function (connection){
@@ -193,7 +193,7 @@ module.exports = {
     },
     /**
      * 执行sql语句
-     * @param {object} connection 连接对象
+     * @param {Connection} connection 连接对象
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<unknown>}
