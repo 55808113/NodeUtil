@@ -287,7 +287,7 @@ module.exports = {
     execSqlByConn: function (connection, sql, params) {
         return new Promise((resolve, reject) => {
             // Print the rows read
-            let result = null;
+            let result = [];
             // Read all rows from table
             let request = new Request(
                 sql,
@@ -296,7 +296,7 @@ module.exports = {
                         reject(err)
                     } else {
                         //删除时可以知识处理了多少数据
-                        if (result==null&&rowCount!=0){
+                        if (result.length==0&&rowCount!=0){
                             result = rowCount
                         }
                         resolve(result)
@@ -313,9 +313,9 @@ module.exports = {
             }
             request.on('row', function(columns) {
                 //当是返回的集合时设置为数组
-                if (result==null){
+                /*if (result==null){
                     result = []
-                }
+                }*/
                 let row = {};
                 columns.forEach(function(column)
                 {
@@ -328,15 +328,25 @@ module.exports = {
             connection.execSql(request);
         })
     },
+    //执行存储过程的相关函数=========================================================
+
     /**
-     * 得到存储过程参数名称
+     * 执行sql语句
      * @param {Connection} connection 连接对象
-     * @param {string} ProcedureName
-     * @returns {object}
-     * @private
+     * @param {string} ProcedureName sql语句
+     * @param {object[]} params sql参数
+     * @returns {Promise<object>}
      */
-    _getProcedureParameters:async function (connection, ProcedureName){
-        let sql = `
+    execProcedureByConn:async function (connection, ProcedureName, params) {
+        /**
+         * 得到存储过程参数名称
+         * @param {Connection} connection 连接对象
+         * @param {string} ProcedureName
+         * @returns {object}
+         * @private
+         */
+        async function _getProcedureParameters(connection, ProcedureName){
+            let sql = `
         SELECT
             sp.object_id AS FunctionId,
             sp.name AS FunctionName,
@@ -372,123 +382,115 @@ module.exports = {
         AND ISNULL( sp.is_ms_shipped, 0 ) = 0
         AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
         ORDER BY sp.name , param.parameter_id ASC;`
-        return await this.execSqlByConn(connection,sql,[ProcedureName])
-    },
-    /**
-     * 得到参数的实际类型
-     * @param {string} parametersType
-     * @returns {Promise<object>}
-     * @private
-     */
-    _getParametersType: function (parametersType){
-        let result = TYPES.NVarChar
-        switch (parametersType) {
-            case 'tinyint':
-                result = TYPES.TinyInt
-                break;
-            case 'bit':
-                result = TYPES.Bit
-                break;
-            case 'smallint':
-                result = TYPES.SmallInt
-                break;
-            case 'int':
-                result = TYPES.Int
-                break;
-            case 'smalldatetime':
-                result = TYPES.SmallDateTime
-                break;
-            case 'real':
-                result = TYPES.Real
-                break;
-            case 'money':
-                result = TYPES.Money
-                break;
-            case 'datetime':
-                result = TYPES.DateTime
-                break;
-            case 'float':
-                result = TYPES.Float
-                break;
-            case 'decimal':
-                result = TYPES.Decimal
-                break;
-            case 'numeric':
-                result = TYPES.Numeric
-                break;
-            case 'smallmoney':
-                result = TYPES.SmallMoney
-                break;
-            case 'bigint':
-                result = TYPES.BigInt
-                break;
-            case 'image':
-                result = TYPES.Image
-                break;
-            case 'text':
-                result = TYPES.Text
-                break;
-            case 'uniqueIdentifier':
-                result = TYPES.UniqueIdentifier
-                break;
-            case 'ntext':
-                result = TYPES.NText
-                break;
-            case 'varbinary':
-                result = TYPES.VarBinary
-                break;
-            case 'varchar':
-                result = TYPES.VarChar
-                break;
-            case 'binary':
-                result = TYPES.Binary
-                break;
-            case 'char':
-                result = TYPES.Char
-                break;
-            case 'nvarchar':
-                result = TYPES.NVarChar
-                break;
-            case 'nchar':
-                result = TYPES.NChar
-                break;
-            case 'xml':
-                result = TYPES.Xml
-                break;
-            case 'time':
-                result = TYPES.Time
-                break;
-            case 'date':
-                result = TYPES.Date
-                break;
-            case 'datetime2':
-                result = TYPES.DateTime2
-                break;
-            case 'datetimeoffset':
-                result = TYPES.DateTimeOffset
-                break;
-            case 'udt':
-                result = TYPES.UDT
-                break;
-            case 'tvp':
-                result = TYPES.TVP
-                break;
-            case 'variant':
-                result = TYPES.Variant
-                break;
+            return await this.execSqlByConn(connection,sql,[ProcedureName])
         }
-        return result
-    },
-    /**
-     * 执行sql语句
-     * @param {Connection} connection 连接对象
-     * @param {string} ProcedureName sql语句
-     * @param {object[]} params sql参数
-     * @returns {Promise<object>}
-     */
-    execProcedureByConn:async function (connection, ProcedureName, params) {
-        let self = this
-        let rsParams = await self._getProcedureParameters(connection,ProcedureName)
+        /**
+         * 得到参数的实际类型
+         * @param {string} parametersType
+         * @returns {Promise<object>}
+         * @private
+         */
+        function _getParametersType(parametersType){
+            let result = TYPES.NVarChar
+            switch (parametersType) {
+                case 'tinyint':
+                    result = TYPES.TinyInt
+                    break;
+                case 'bit':
+                    result = TYPES.Bit
+                    break;
+                case 'smallint':
+                    result = TYPES.SmallInt
+                    break;
+                case 'int':
+                    result = TYPES.Int
+                    break;
+                case 'smalldatetime':
+                    result = TYPES.SmallDateTime
+                    break;
+                case 'real':
+                    result = TYPES.Real
+                    break;
+                case 'money':
+                    result = TYPES.Money
+                    break;
+                case 'datetime':
+                    result = TYPES.DateTime
+                    break;
+                case 'float':
+                    result = TYPES.Float
+                    break;
+                case 'decimal':
+                    result = TYPES.Decimal
+                    break;
+                case 'numeric':
+                    result = TYPES.Numeric
+                    break;
+                case 'smallmoney':
+                    result = TYPES.SmallMoney
+                    break;
+                case 'bigint':
+                    result = TYPES.BigInt
+                    break;
+                case 'image':
+                    result = TYPES.Image
+                    break;
+                case 'text':
+                    result = TYPES.Text
+                    break;
+                case 'uniqueIdentifier':
+                    result = TYPES.UniqueIdentifier
+                    break;
+                case 'ntext':
+                    result = TYPES.NText
+                    break;
+                case 'varbinary':
+                    result = TYPES.VarBinary
+                    break;
+                case 'varchar':
+                    result = TYPES.VarChar
+                    break;
+                case 'binary':
+                    result = TYPES.Binary
+                    break;
+                case 'char':
+                    result = TYPES.Char
+                    break;
+                case 'nvarchar':
+                    result = TYPES.NVarChar
+                    break;
+                case 'nchar':
+                    result = TYPES.NChar
+                    break;
+                case 'xml':
+                    result = TYPES.Xml
+                    break;
+                case 'time':
+                    result = TYPES.Time
+                    break;
+                case 'date':
+                    result = TYPES.Date
+                    break;
+                case 'datetime2':
+                    result = TYPES.DateTime2
+                    break;
+                case 'datetimeoffset':
+                    result = TYPES.DateTimeOffset
+                    break;
+                case 'udt':
+                    result = TYPES.UDT
+                    break;
+                case 'tvp':
+                    result = TYPES.TVP
+                    break;
+                case 'variant':
+                    result = TYPES.Variant
+                    break;
+            }
+            return result
+        }
+
+        let rsParams = await _getProcedureParameters(connection,ProcedureName)
         return new Promise((resolve, reject) => {
             // Print the rows read
             let result = null;
@@ -514,7 +516,7 @@ module.exports = {
                 for (let i = 0; i < rsParams.length; i++) {
                     let param = params[i]
                     let rsparam = rsParams[i]
-                    let paramType = self._getParametersType(rsparam.DataType)
+                    let paramType = _getParametersType(rsparam.DataType)
                     request.addParameter(rsparam.ParamName.replace("@",""), paramType, param);
                 }
             }
