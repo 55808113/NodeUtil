@@ -326,8 +326,7 @@ module.exports = {
     /**
      * 导入excel文件
      * @param ctx
-     * @param {string} sql sql语句
-     * @param {function} callbackParam 设置执行sql的参数返回参数
+     * @param {sql: string, onUploadFileSuccess: function,onSetParams:function } opts  sql语句
      * @returns {Promise<{fail: number, success: number, failfilename: string}>}
      * {
      *   fail: number, //错误的个数
@@ -335,7 +334,7 @@ module.exports = {
      *   failfilename: string //错误的文件名
      * }
      */
-    impExcel: async function (ctx, sql, callbackParam) {
+    impExcel: async function (ctx, opts) {
         //文件数据转xlsx格式
         function xlsxDatatoJson(xlsData) {
             let workbook = xlsx.read(xlsData);
@@ -343,10 +342,34 @@ module.exports = {
             let worksheet = workbook.Sheets[sheetNames[0]];// 获取excel的第一个表格
             return xlsx.utils.sheet_to_json(worksheet);
         }
+        //转换为导出模板的类型
+        function convertType(data){
+            let result = "string"
+            if (typeof data == "string"){
+                result = "string"
+            }else if(typeof data == "number"){
+                result = "number"
+            }else if (typeof data == "date"){
+                result = "date"
+            }
+            return result
+        }
+        let options = {
+            sql:"",
+            //上传文件成功事件:让程序取得一些参数
+            onUploadFileSuccess: function (ctx){
 
+            },
+            //设置参数
+            onSetParams:async function (item){
+
+            }
+        }
+        options = _.assign({},options,opts)
         try {
             let filepath = this.impFailpath
             let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
+            options.onUploadFileSuccess.call(this,ctx)
             let rows = xlsxDatatoJson(uploaddata)
             let failInfos = []
             let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
@@ -355,11 +378,18 @@ module.exports = {
                 for (let i = 0; i < rows.length; i++) {
                     let item = rows[i];
                     try {
-                        let param = callbackParam(ctx,item)
+                        let param = await options.onSetParams.call(this,item)
                         if (!param) {
                             throw "callbackParam参数没有设置插入的数据！"
                         }
-                        await $sqlhelper.execSqlByConn(connection, sql, param)
+                        //如果返回数组代表是一下导入多条数据。
+                        if (_.isArray(param)){
+                            for (const paramElement of param) {
+                                await $sqlhelper.execSqlByConn(connection, options.sql, paramElement)
+                            }
+                        }else{
+                            await $sqlhelper.execSqlByConn(connection, options.sql, param)
+                        }
                         resultInfo.success = resultInfo.success + 1;
                     } catch (err) {
                         let info = _.assign({}, item, {"错误行号": String(i + 2), "错误内容": err.message})
@@ -382,7 +412,7 @@ module.exports = {
                 let headers = [];
                 let failinfo = failInfos[0];
                 for (let key in failinfo) {
-                    headers.push({name: key, title: key, type: "string"})
+                    headers.push({name: key, title: key, type: convertType(failinfo[key])})
                 }
                 let excelStream = this.expExcelStream("错误导入数据", headers, failInfos)
                 $file.writeFile(path.join(filepath, resultInfo.failfilename), excelStream)
