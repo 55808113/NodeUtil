@@ -5,7 +5,6 @@
 const compose = require('koa-compose')
 const path = require('path')
 const $file = require('./file')
-const a = require("../index")
 //根据目录得到所有的文件。
 //const globby = require('globby')
 /**
