@@ -349,5 +349,19 @@ module.exports = {
         var _b = this.randomNum(min, max);
         return "rgb(" + _r + "," + _g + "," + _b + ")";
     },
+    /**
+     * 替换全部内容
+     * @param str
+     * @param pattern
+     * @param replacement
+     * @returns {string}
+     */
+    replaceAll: function (str,pattern,replacement){
+        let result = str
+        while (result.indexOf(pattern)!=-1){
+            result = _.replace(result,pattern,replacement);
+        }
+        return result
+    }
 
 };
