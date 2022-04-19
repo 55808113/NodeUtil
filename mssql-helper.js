@@ -382,7 +382,7 @@ module.exports = {
         AND ISNULL( sp.is_ms_shipped, 0 ) = 0
         AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
         ORDER BY sp.name , param.parameter_id ASC;`
-            return await this.execSqlByConn(connection,sql,[ProcedureName])
+            return await self.execSqlByConn(connection,sql,[ProcedureName])
         }
         /**
          * 得到参数的实际类型
@@ -489,7 +489,7 @@ module.exports = {
             }
             return result
         }
-
+        let self = this
         let rsParams = await _getProcedureParameters(connection,ProcedureName)
         return new Promise((resolve, reject) => {
             // Print the rows read
