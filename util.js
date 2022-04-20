@@ -362,6 +362,18 @@ module.exports = {
             result = _.replace(result,pattern,replacement);
         }
         return result
+    },
+    /**
+     * 解决eval的错误提示
+     * @param {string} command
+     * @returns {*}
+     */
+    evil:function (command) {
+        var Fn = Function;  //一个变量指向Function，防止有些前端编译工具报错
+        if (command.indexOf("return")!=-1){
+            return new Fn(command)();
+        }else{
+            return new Fn("return" + command)();
+        }
     }
-
 };
