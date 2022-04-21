@@ -161,6 +161,15 @@ module.exports = {
             col.type = type
             //width不好使
             //col.width = 50.7109375
+            //标题的样式索引
+            //<cellXfs count="4">
+            //     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+            //     <xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+            //     <xf numFmtId="14" fontId="0" fillId="2" borderId="1" xfId="1" applyNumberFormat="1" applyFont="1"/>
+            //     <xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="1" applyFont="1"/>
+            //   </cellXfs>
+            // 这个就是style.xml这个节点cellXfs中的索引号。
+            col.captionStyleIndex = 2;
             //日期格式要改变成string否则显示有问题
             col.beforeCellWrite = function (row, cellData, eOpt) {
                 let value = format(cellData, eOpt);
@@ -182,6 +191,7 @@ module.exports = {
         }
         let conf = {};
         //可以设置样式
+        conf.stylesXmlFile = path.join(__dirname,"excel_styles.xml");
         conf.name = "sheet";
         conf.cols = [];
         for (let item of headers) {
