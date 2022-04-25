@@ -109,7 +109,7 @@ module.exports = {
      * 执行sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
-     * @returns {Promise<object>}
+     * @returns {Promise<object[]>}
      */
     execSql: async function (sql, params) {
         let result = 0
