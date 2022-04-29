@@ -13,27 +13,6 @@ const $convert = require('./convert')
 //参数的别名以A开头：例如@A1,@A2....
 const paramname = "A"
 module.exports = {
-    /**
-     * resultSet记录集对象转换成json数组格式
-     * @param resultSet
-     * @private
-     */
-    _resultSetToJson: async function (resultSet){
-        let result = [];
-        //得到字符的名称
-        let fieldnames = resultSet.metaData
-        //let rows = await resultSet.getRows()
-        let row;
-        //把数据返回到一个数组中。
-        while (row = await resultSet.getRow()) {
-            let resultRow = {}
-            for (let i = 0; i < fieldnames.length; i++) {
-                resultRow[fieldnames[i].name.toLowerCase()] = row[i]
-            }
-            result.push(resultRow)
-        }
-        return result;
-    },
     //连接
     //connection: null,
     config:null,
@@ -285,23 +264,25 @@ module.exports = {
      * @returns {Promise<object>}
      */
     execSqlByConn: function (connection, sql, params) {
+        const start = new Date()
         return new Promise((resolve, reject) => {
             // Print the rows read
             let result = [];
             // Read all rows from table
-            let request = new Request(
-                sql,
-                function(err, rowCount) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        //删除时可以知识处理了多少数据
-                        if (result.length==0&&rowCount!=0){
-                            result = rowCount
-                        }
-                        resolve(result)
-                    }
-                });
+            let request = new Request(sql, function(err, rowCount) {
+                const ms = new Date() - start
+                if (err) {
+                    $log4js.sqlErrLogger(sql, params, err, ms)
+                    reject(err)
+                    return;
+                }
+                //删除时可以知识处理了多少数据
+                if (result.length==0&&rowCount!=0){
+                    result = rowCount
+                }
+                $log4js.sqlInfoLogger(sql, params, ms)
+                resolve(result)
+            });
             if (params) {
                 for (let i = 0; i < params.length; i++) {
                     if (typeof params[i] == "number") {
@@ -490,24 +471,26 @@ module.exports = {
             return result
         }
         let self = this
+        const start = new Date()
         let rsParams = await _getProcedureParameters(connection,ProcedureName)
         return new Promise((resolve, reject) => {
             // Print the rows read
             let result = null;
             // Read all rows from table
-            let request = new Request(
-                ProcedureName,
-                function(err, rowCount) {
-                    if (err) {
-                        reject(err)
-                    } else {
-                        //删除时可以知识处理了多少数据
-                        if (result==null&&rowCount!=0){
-                            result = rowCount
-                        }
-                        resolve(result)
-                    }
-                });
+            let request = new Request(ProcedureName,function(err, rowCount) {
+                const ms = new Date() - start
+                if (err) {
+                    $log4js.sqlErrLogger(ProcedureName, params, err, ms)
+                    reject(err)
+                    return;
+                }
+                //删除时可以知识处理了多少数据
+                if (result==null&&rowCount!=0){
+                    result = rowCount
+                }
+                $log4js.sqlInfoLogger(ProcedureName, params, ms)
+                resolve(result)
+            });
             if ($util.isNotEmpty(rsParams)) {
                 if ($util.isEmpty(params) || rsParams.length!=params.length){
                     reject("存储过程：" + ProcedureName + "传入的参数与实际参数个数不符！")

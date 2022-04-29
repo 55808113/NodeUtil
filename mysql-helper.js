@@ -9,6 +9,12 @@ const $util = require('./util')
 const $convert = require('./convert')
 
 module.exports = {
+    options:{
+
+    },
+    init:function (opts){
+        _.assign(this.options,opts)
+    },
     /**
      * Create a new Pool instance.
      * @param {object|string} config Configuration or connection string for new MySQL connections
@@ -16,6 +22,7 @@ module.exports = {
      * @public
      */
     createPool: function (config){
+        let self = this;
         this.pool = mysql.createPool(config)
         return this.pool
     },
@@ -112,7 +119,7 @@ module.exports = {
                 connection.rollback();
                 throw err
             } finally {
-                connection.release();
+                this.pool.releaseConnection(connection)
             }
         } catch (err) {
             throw err
@@ -214,5 +221,18 @@ module.exports = {
                 resolve(result)
             })
         })
+    },
+    /**
+     * 设置group_concat_max_len为10240的大小
+     * @param {number} group_concat_max_len
+     * @returns {Promise<Object[]>}
+     */
+    setGroup_concat_max_len:async function (group_concat_max_len){
+        group_concat_max_len = group_concat_max_len || 10240
+        let sql = `SET GLOBAL group_concat_max_len = ${group_concat_max_len};`
+        //sql += `SET SESSION group_concat_max_len = ${group_concat_max_len};`
+        await this.execSql(sql);
+        sql = `SET SESSION group_concat_max_len = ${group_concat_max_len};`
+        return await this.execSql(sql);
     }
 };

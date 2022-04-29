@@ -117,146 +117,157 @@ module.exports = {
      * @returns {*}
      */
     expExcelStream: function (title, headers, rows) {
-        //格式判断
-        function format(val, opt) {
-            let type = opt.cellType;
 
-            function addzero(v) {
-                if (v < 10) return '0' + v;
-                return v.toString();
-            }
-            switch (type){
-                case "date":
-                    opt.cellType = "string";
-                    val = $convert.getDateString(val)
-                    break;
-                case "datetime":
-                    opt.cellType = "string";
-                    val = $convert.getDateTimeString(val)
-                    break;
-                case "bool":
-                    opt.cellType = "string";
-                    if (!$util.isEmpty(val)) {
-                        if ($convert.getBool(val)) {
-                            val = "是";
-                        } else {
-                            val = "否";
-                        }
-                    } else {
-                        val = "";
+        function getConf(){
+            function getCol(title, type) {
+                //格式判断
+                function format(val, opt) {
+                    let type = opt.cellType;
+
+                    /*function addzero(v) {
+                        if (v < 10) return '0' + v;
+                        return v.toString();
+                    }*/
+                    switch (type){
+                        case "date":
+                            opt.cellType = "string";
+                            val = $convert.getDateString(val)
+                            break;
+                        case "datetime":
+                            opt.cellType = "string";
+                            val = $convert.getDateTimeString(val)
+                            break;
+                        case "bool":
+                            opt.cellType = "string";
+                            if (!$util.isEmpty(val)) {
+                                if ($convert.getBool(val)) {
+                                    val = "是";
+                                } else {
+                                    val = "否";
+                                }
+                            } else {
+                                val = "";
+                            }
+                            break;
+                        case "number":
+                            val = $convert.getNumber(val,null)
+                            break;
                     }
-                    break;
-                case "number":
-                    val = $convert.getNumber(val,null)
-                    break;
+
+                    return val;
+                }
+                let col = {};
+                col.caption = title;
+                //所有的属性类型都是string
+                col.type = type
+                //width不好使
+                //col.width = 50.7109375
+                //标题的样式索引
+                //<cellXfs count="4">
+                //     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+                //     <xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+                //     <xf numFmtId="14" fontId="0" fillId="2" borderId="1" xfId="1" applyNumberFormat="1" applyFont="1"/>
+                //     <xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="1" applyFont="1"/>
+                //   </cellXfs>
+                // 这个就是style.xml这个节点cellXfs中的索引号。
+                col.captionStyleIndex = 2;
+                //日期格式要改变成string否则显示有问题
+                col.beforeCellWrite = function (row, cellData, eOpt) {
+                    let value = format(cellData, eOpt);
+                    return value;
+                }
+                return col
             }
-
-            return val;
-        }
-
-        function getCol(title, type) {
-            let col = {};
-            col.caption = title;
-            //所有的属性类型都是string
-            col.type = type
-            //width不好使
-            //col.width = 50.7109375
-            //标题的样式索引
-            //<cellXfs count="4">
-            //     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-            //     <xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-            //     <xf numFmtId="14" fontId="0" fillId="2" borderId="1" xfId="1" applyNumberFormat="1" applyFont="1"/>
-            //     <xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="1" applyFont="1"/>
-            //   </cellXfs>
-            // 这个就是style.xml这个节点cellXfs中的索引号。
-            col.captionStyleIndex = 2;
-            //日期格式要改变成string否则显示有问题
-            col.beforeCellWrite = function (row, cellData, eOpt) {
-                let value = format(cellData, eOpt);
-                return value;
-            }
-            return col
-        }
-
-        //判断json数据并且在headers上生成需要的对象
-        for (let item of headers) {
-            if (item.type == "json") {
-                item.content = []
-                for (let i in item.templaterows) {
-                    let templates = item.templaterows[i]
-                    let content = JSON.parse(templates.content);
-                    item.content = item.content.concat(content)
+            let conf = {};
+            //可以设置样式
+            conf.stylesXmlFile = path.join(__dirname,"excel_styles.xml");
+            conf.name = "sheet";
+            conf.cols = [];
+            for (let item of headers) {
+                //判断json数据并且在headers上生成需要的对象
+                if (item.type == "json") {
+                    item.content = []
+                    for (let i in item.templaterows) {
+                        let templates = item.templaterows[i]
+                        let content = JSON.parse(templates.content);
+                        item.content = item.content.concat(content)
+                    }
+                    item.content.forEach(function (n) {
+                        let type = "string"
+                        switch (n.type){
+                            case "booleanfield":
+                                type = "bool"
+                                break;
+                            case "numberfield":
+                                type = "number"
+                                break;
+                            case "datetimefield":
+                                type = "string"
+                                break;
+                            case "datefield":
+                                type = "string"
+                                break;
+                        }
+                        let col = getCol(n.label, type)
+                        conf.cols.push(col);
+                    })
+                } else {
+                    let col = getCol(item.title, item.type)
+                    conf.cols.push(col);
                 }
             }
+            return conf
         }
-        let conf = {};
-        //可以设置样式
-        conf.stylesXmlFile = path.join(__dirname,"excel_styles.xml");
-        conf.name = "sheet";
-        conf.cols = [];
-        for (let item of headers) {
-            if (item.type == "json") {
-                item.content.forEach(function (n) {
-                    let type = "string"
-                    switch (n.type){
-                        case "booleanfield":
-                            type = "bool"
-                            break;
-                        case "numberfield":
-                            type = "number"
-                            break;
-                        case "datetimefield":
-                            type = "string"
-                            break;
-                        case "datefield":
-                            type = "string"
-                            break;
-                    }
-                    let col = getCol(n.label, type)
-                    conf.cols.push(col);
-                })
-            } else {
-                let col = getCol(item.title, item.type)
-                conf.cols.push(col);
-            }
-        }
-        let datas = [];
-        for (let i = 0; i < rows.length; i++) {
-            let data = []
-            let row = rows[i]
-            for (let item of headers) {
-                let val = row[item.name]
-                if (item.type == "json") {
-                    let dataObj = JSON.parse(val)
-                    for (let n of item.content) {
-                        let value = ""
-                        if (!_.isEmpty(dataObj)) {
-                            for (let key in dataObj.data) {
-                                if (n.fieldName == key) {
-                                    value = dataObj.data[key]
-                                    if (n.type == "comboboxfield") {
-                                        let valueArr = value.split(',')
-                                        let nameArr = []
-                                        for (let res of n.singleOption) {
-                                            if (valueArr.indexOf(res.itemValue) != -1) {
-                                                nameArr.push(res.itemName)
+        //得到数据
+        function getDatas(){
+            let datas = [];
+            for (let i = 0; i < rows.length; i++) {
+                let data = []
+                let row = rows[i]
+                for (let item of headers) {
+                    let val = row[item.name]
+                    if (item.type == "json") {
+                        let dataObj = JSON.parse(val)
+                        for (let n of item.content) {
+                            let value = ""
+                            if (!_.isEmpty(dataObj)) {
+                                for (let key in dataObj.data) {
+                                    if (n.fieldName == key) {
+                                        value = dataObj.data[key]
+                                        if (n.type == "comboboxfield") {
+                                            let valueArr = value.split(',')
+                                            let nameArr = []
+                                            for (let res of n.singleOption) {
+                                                if (valueArr.indexOf(res.itemValue) != -1) {
+                                                    nameArr.push(res.itemName)
+                                                }
                                             }
+                                            value = nameArr.join(',')
                                         }
-                                        value = nameArr.join(',')
+                                        break;
                                     }
-                                    break;
                                 }
                             }
+                            data.push($convert.getObject(value))
                         }
-                        data.push($convert.getObject(value))
+                    } else {
+                        //得到有data类型的话。取真实数据的值
+                        if ($util.isNotEmpty(item.data)){
+                            let index = _.findIndex(item.data,['value',val])
+                            if (index!=-1){
+                                val = item.data[index].text
+                            }
+                        }
+                        data.push($convert.getObject(val))
                     }
-                } else {
-                    data.push($convert.getObject(val))
                 }
+                datas.push(data);
             }
-            datas.push(data);
+            return datas
         }
-        conf.rows = datas;
+
+        let conf = getConf()
+        conf.rows = getDatas();
         return Buffer.from(nodeExcel.execute(conf), 'binary');
     },
     /**
@@ -275,6 +286,8 @@ module.exports = {
         let cols = []
         for (let key in headerObj) {
             let item = headerObj[key]
+            /*//不是对象继续执行
+            if (!_.isObject(item)) continue*/
             let columntype = "string"
             if (item.type) columntype = item.type
             let col = {
@@ -282,6 +295,14 @@ module.exports = {
                 type: columntype,
                 title: item.title,
                 order: item.order,
+                /**
+                 * 像类型这样的，这个是类型对应的名称
+                 * data: [
+                 {text:"人员",value:"0"},
+                 {text:"科室",value:"1"}
+                 ]
+                 */
+                data: item.data,
                 //模板的字段
                 templaterows: item.templaterows
             };
@@ -297,7 +318,7 @@ module.exports = {
      * 根据配置的信息表导出excel
      * @param ctx
      * @param {string} title 导出的文件名
-     * @param {object[]} colresults 导出的头文件格式
+     * @param {object} colresults 导出的头文件格式
      * @param {object[]} rows 导出的数据
      */
     expExcelbyData: function (ctx, title, colresults, rows) {
