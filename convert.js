@@ -105,14 +105,49 @@ module.exports = {
      * @param {string} sn 分割的字符串
      * @returns {*|Array|string[]} 返回的数组
      */
-    strToArray(str, sn = ',') {
-        if (!$util.isEmpty(str)) {
-            const ss = str.split(sn); // 在每个逗号(,)处进行分解。
-            // console.log(ss);
-            return ss;
-        } else {
-            return str;
+    strToArray: function(str, sn = ',') {
+        let result = []
+        if ($util.isNotEmpty(str)) {
+            result = str.split(sn); // 在每个逗号(,)处进行分解。
         }
+        return result
+
+    },
+    /**
+     * 数组转成字符串
+     * @param {object[]|string} arr
+     * @param {string} sn
+     * @returns {string} 返回的字符串
+     */
+    arrayToStr: function(arr, sn = ','){
+        let result = "";
+        if (Array.isArray(arr)) {
+            result = arr.join(sn)
+        } else {
+            result = arr
+        }
+        return result
+    },
+    /**
+     * 前台传过来的数组有时是字符串有时是数组。所以通过转换成统一的数组
+     * 当选择一个时是string。多个时才是array类型
+     * @param arr
+     * @returns {*[]}
+     */
+    paramsToArr: function(arr){
+        let result = []
+        if ($util.isNotEmpty(arr)) {
+            if (_.isArray(arr)) {
+                for (let value of arr) {
+                    if ($util.isNotEmpty(value)) {
+                        result.push(value)
+                    }
+                }
+            } else {
+                result.push(arr)
+            }
+        }
+        return result
     },
     /**
      * 字符串转json类型
