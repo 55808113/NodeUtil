@@ -265,7 +265,9 @@ module.exports = {
             }
             return datas
         }
-
+        if ($util.isEmpty(rows)){
+            throw new Error("没有查询到要导出的数据！")
+        }
         let conf = getConf()
         conf.rows = getDatas();
         return Buffer.from(nodeExcel.execute(conf), 'binary');
@@ -388,7 +390,7 @@ module.exports = {
         let options = {
             sql:"",
             //上传文件成功事件:让程序取得一些参数
-            onUploadFileSuccess: function (ctx){
+            onUploadFileSuccess: async function (ctx){
 
             },
             //设置参数
@@ -400,7 +402,7 @@ module.exports = {
         try {
             let filepath = this.impFailpath
             let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
-            options.onUploadFileSuccess.call(this,ctx)
+            await options.onUploadFileSuccess.call(this,ctx)
             let rows = xlsxDatatoJson(uploaddata)
             let failInfos = []
             let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
