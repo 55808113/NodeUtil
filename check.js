@@ -2,7 +2,7 @@
  * 判断的语句
  例子：
  */
-const $common = require('./common')
+const $command = require('./command')
 module.exports = {
     /**
      * 判断字符是否为函数
@@ -45,7 +45,7 @@ module.exports = {
         } catch (e) {
             return false;
         }
-        const id = $common.getValue(osrelease, 'id');
+        const id = $command.getValue(osrelease, 'id');
         return (id && id.indexOf('raspbian') > -1);
     },
     /**
