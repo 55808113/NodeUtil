@@ -8,6 +8,9 @@ const _ = require('lodash')
 const $log4js = require('./log4js')
 
 module.exports = {
+    /**
+     * {RedisClient}
+     */
     client: null,
     /**
      * Create a new Client instance.
@@ -50,7 +53,7 @@ module.exports = {
             this.client.set(key, val)
         } else {
             //将毫秒单位转为秒
-            this.client.setex(key, time, value);
+            this.client.setex(key, time, val);
         }
 
         return true
