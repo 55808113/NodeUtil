@@ -2,7 +2,7 @@
  * redis服务器的客户端
  * */
 
-const redis = require('redis')
+const redis = require('ioredis')
 //常用的js函数类
 const _ = require('lodash')
 const $log4js = require('./log4js')
@@ -13,13 +13,18 @@ module.exports = {
      */
     client: null,
     /**
+     * 能否使用
+     */
+    enable:false,
+    /**
      * Create a new Client instance.
      * @param {object|string} config Configuration or connection string for new MySQL connections
      * @public
      */
     createClient: function (config){
+        this.enable = config.enable
         if (!config.enable) return;
-        this.client = redis.createClient(config)
+        this.client = new redis(config)
         this.client.on('ready', function (res) {
             console.log('ready');
         });
@@ -40,21 +45,18 @@ module.exports = {
      * 设置对象
      * @param {string} key 键的名称
      * @param {string} val 字段值
-     * @param {int} time 秒单位
+     * @param {int} maxAge 秒单位
      * @returns {boolean}
      */
-    set: function (key, val, time) {
+    set:async function (key, val, maxAge = 60 * 60 * 24, ex = 'EX') {
+        let self = this
         if (!this.client) return;
         if (typeof val === 'object') {
             val = JSON.stringify(val)
         }
-        if (this.client.connected) return false
-        if (!time) {
-            this.client.set(key, val)
-        } else {
-            //将毫秒单位转为秒
-            this.client.setex(key, time, val);
-        }
+        if (self.client.status!="ready") return null
+
+        await this.client.set(key, val,ex, maxAge)
 
         return true
     },
@@ -63,44 +65,28 @@ module.exports = {
      * @param {string} key 键的名称
      * @returns {Promise<unknown>|null}
      */
-    get: function (key) {
+    get: async function (key) {
         let self = this
-        if (!this.client) return null;
-        return new Promise((resolve, reject) => {
-            if (!self.client.connected) {
-                resolve(null)
-                return
+        if (!this.client||self.client.status!="ready") return null;
+        let result = await self.client.get(key)
+        if (result != null && typeof result === 'string') {
+            try {
+                result = JSON.parse(result)
+            } catch (error) {
+
             }
-            self.client.get(key, (err, val) => {
-                if (err) {
-                    //$log4js.errLogger(null,err)
-                    //resolve(null)
-                    reject(err)
-                    return
-                }
-                if (val == null) {
-                    resolve(null)
-                    return
-                }
-                try {
-                    resolve(JSON.parse(val))
-                } catch (error) {
-                    resolve(val)
-                }
-                self.client.quit()
-            })
-        })
+        }
+        return result;
     },
     /**
      * 删除表中的数据
      * @param {string} key 键的名称
      * @returns {boolean}
      */
-    del: function (key) {
+    del:async function (key) {
         let self = this;
-        if (!this.client) return;
-        if (!self.client.connected) return false
-        self.client.del(key)
+        if (!this.client || self.client.status!="ready") return null;
+        await self.client.del(key)
         return true
     },
     /*设置对象
@@ -115,54 +101,79 @@ module.exports = {
      * @param val 字段值
      * @returns {boolean}
      */
-    hset: function (key, field, val) {
+    hset: async function (key, field, val) {
         let self = this;
-        if (!this.client) return;
+        if (!this.client||self.client.status!="ready") return null;
         if (typeof val === 'object') {
             val = JSON.stringify(val)
         }
-        if (!self.client.connected) return false
-        self.client.hset(key, field, val)
+        await self.client.hset(key, field, val)
         return true
     },
-    /*得到json对象
-     key:表的名称
-     field:字段名称
-     val:字段值
-     */
     /**
      * 得到json对象
      * @param {string} key 键的名称
      * @param {string} field 字段名称
      * @returns {Promise<unknown>|null}
      */
-    hget: function (key, field) {
+    hget:async function (key, field) {
         let self = this;
-        if (!this.client) return null;
-        return new Promise((resolve, reject) => {
-            //当没有启动服务时，返回Null
-            if (!self.client.connected) {
-                resolve(null)
-                return
+        if (!this.client||self.client.status!="ready") return null;
+        let result = await self.client.hget(key, field)
+        if (result != null && typeof result === 'string') {
+            try {
+                result = JSON.parse(result)
+            } catch (error) {
+
             }
-            self.client.hget(key, field, (err, val) => {
-                if (err) {
-                    //$log4js.errLogger(null,err)
-                    //resolve(null)
-                    reject(err)
-                    return
-                }
-                if (val == null) {
-                    resolve(null)
-                    return
-                }
+        }
+        return result;
+    },
+    /**
+     * 通过fidld得到json对象数组
+     * @param {string} key 键的名称
+     * @param {object[]} fields 字段名称
+     * @returns {Promise<unknown>|null}
+     */
+    hmget:async function (key, fields) {
+        let self = this;
+        if (!this.client||self.client.status!="ready") return null;
+        let result = []
+        let rows = await self.client.hmget(key, fields)
+        if (rows != null) {
+            for (let row of rows) {
                 try {
-                    resolve(JSON.parse(val))
+                    result.push(JSON.parse(row))
                 } catch (error) {
-                    resolve(val)
+                    result.push(row)
                 }
-            })
-        })
+            }
+
+        }
+        return result;
+    },
+    /**
+     * 得到所有key的数组
+     * @param key
+     * @returns {Promise<*|null>}
+     */
+    hgetall:async function (key) {
+        let self = this;
+        if (!this.client||self.client.status!="ready") return null;
+        let result = []
+        let rows = await self.client.hgetall(key)
+        if (rows != null) {
+            for (let key in rows) {
+                let row = rows[key]
+                try {
+                    result.push(JSON.parse(row))
+                } catch (error) {
+                    result.push(row)
+                }
+            }
+
+        }
+        return result;
     },
     /**
      * 删除表中的数据
@@ -170,12 +181,63 @@ module.exports = {
      * @param {string} field 字段名称
      * @returns {boolean}
      */
-    hdel: function (key, field) {
+    hdel:async function (key, field) {
         let self = this;
-        if (!this.client) return;
-        if (!self.client.connected) return false
-        self.client.hdel(key, field)
+        if (!this.client||self.client.status!="ready") return;
+        await self.client.hdel(key, field)
         return true
+    },
+    /**
+     * 设置过期时间
+     * @param {string} key 键的名称
+     * @param {int} maxAge 秒单位 60 * 60 * 24一天
+     * @param ex
+     * @returns {boolean}
+     */
+    expire:async function (key, maxAge = 60 * 60 * 24) {
+        let self = this;
+        if (!this.client||self.client.status!="ready") return;
+        await self.client.expire(key,maxAge);
+    },
+    /**
+     * 判断key是否存在
+     * @param key
+     * @returns {Promise<boolean>} 1:成功 0:失败
+     */
+    exists:async function (key) {
+        let self = this;
+        let result = false;
+
+        if (!this.client||self.client.status!="ready") return;
+        if (await self.client.exists(key)){
+            result = true
+        }
+        return result
+    },
+    /**
+     * 清空所有数据库的key
+     * @param key
+     * @returns {Promise<boolean>}
+     */
+    flushall:async function () {
+        let self = this;
+        if (!this.client||self.client.status!="ready") return;
+        await self.client.flushall()
+    },
+
+    /**
+     * 判断key和field是否存在
+     * @param key
+     * @returns {Promise<boolean>}
+     */
+    hexists:async function (key,field) {
+        let self = this;
+        let result = false;
+        if (!this.client||self.client.status!="ready") return null;
+        if (await self.client.hexists(key,field)){
+            result = true
+        }
+        return result
     },
     /**
      * 列表 向redis中插入整个数组，其数组中为多条string类型的json数据
@@ -209,7 +271,7 @@ module.exports = {
         if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
@@ -234,7 +296,7 @@ module.exports = {
         if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
@@ -259,7 +321,7 @@ module.exports = {
         if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
@@ -285,7 +347,7 @@ module.exports = {
         if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
@@ -324,7 +386,7 @@ module.exports = {
         if (!this.client) return null;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
@@ -350,7 +412,7 @@ module.exports = {
         if (!this.client) return null;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
@@ -374,7 +436,7 @@ module.exports = {
         if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
@@ -398,7 +460,7 @@ module.exports = {
         if (!this.client) return;
         return new Promise((resolve, reject) => {
             //当没有启动服务时，返回Null
-            if (!self.client.connected) {
+            if (self.client.status!="ready") {
                 resolve(null)
                 return
             }
