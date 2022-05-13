@@ -2,7 +2,6 @@
  * 操作Excel相关函数
  *
  * */
-
 const nodeExcel = require('excel-export')
 const xlsx = require('xlsx')
 const _ = require('lodash')
@@ -10,11 +9,12 @@ const fs = require('fs')
 //const xlsx = require('xlsx-style');//选择使用xlsx-style可以设置表格样式
 const ejsexcel = require("ejsexcel")
 const path = require('path')
+const $util = require('./util')
 const $convert = require('./convert')
 const $upload = require('./upload')
 const $file = require('./file')
 const $sqlhelper = require('./mysql-helper')
-const $util = require('./util')
+
 module.exports = {
     //////////////////////////////////EXCEL文件操作/////////////////////////////////////////
     /**
