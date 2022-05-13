@@ -2,7 +2,7 @@
 字符串转换函数
  */
 const http = require('http');
-const debug = require('debug')('demo:server');
+const debug = require('debug')('server');
 module.exports = {
     //端口
     _port: "3000",
