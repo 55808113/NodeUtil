@@ -2,6 +2,7 @@
  日志记录
  */
 const log4js = require('log4js')
+const debugSqlInfo = require('debug')('sqlinfo');
 const path = require('path')
 let logger = {}
 /**
@@ -122,6 +123,7 @@ logger.resLogger = (ctx, resTime) => {
 logger.sqlInfoLogger = (sql, param, sqlTime) => {
     let log
     log = {sql, param, sqlTime}
+    debugSqlInfo(log)
     sqlInfoLogger.info(log)
 }
 /**
