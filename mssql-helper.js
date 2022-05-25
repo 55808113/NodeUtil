@@ -174,10 +174,12 @@ module.exports = {
      * @returns {Promise<object>}
      */
     selectAllByTableName: async function(){
-        let sql = `select a.name tableName, b.value tableComment 
+        let sql = `select a.name tableName, a.name tableComment 
         from sysobjects a 
-        LEFT JOIN sys.extended_properties b ON a.id = b.major_id 
-        AND b.minor_id = 0 where xtype = 'u'`
+            LEFT JOIN sys.extended_properties b ON a.id = b.major_id 
+            AND b.minor_id = 0 
+        where a.xtype in ('U','V') 
+        order by a.xtype,a.name`
         return await this.execSql(sql);
     },
     /**
