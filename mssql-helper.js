@@ -174,7 +174,7 @@ module.exports = {
      * @returns {Promise<object>}
      */
     selectAllByTableName: async function(){
-        let sql = `select a.name tableName, a.name tableComment 
+        let sql = `select a.name tablename, a.name tablecomment 
         from sysobjects a 
             LEFT JOIN sys.extended_properties b ON a.id = b.major_id 
             AND b.minor_id = 0 

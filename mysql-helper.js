@@ -131,7 +131,7 @@ module.exports = {
      * @returns {Promise<object>}
      */
     selectAllByTableName: async function(){
-        let sql = "SELECT table_name tableName, ENGINE, table_comment tableComment, create_time createTime FROM information_schema.TABLES WHERE table_schema = (SELECT DATABASE())"
+        let sql = "SELECT table_name tablename, ENGINE, table_comment tablecomment, create_time createTime FROM information_schema.TABLES WHERE table_schema = (SELECT DATABASE())"
         return await this.execSql(sql);
     },
     /**
