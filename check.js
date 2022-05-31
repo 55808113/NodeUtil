@@ -52,6 +52,7 @@ module.exports = {
      * 检验浏览器是否为PC
      */
     checkIsPC: function (ctx){
+        if (!ctx.request.headers["user-agent"]) return true;
         var deviceAgent = ctx.request.headers["user-agent"].toLowerCase();
         var agentID = deviceAgent.match(/(iphone|ipod|ipad|android)/);
         if(agentID){
