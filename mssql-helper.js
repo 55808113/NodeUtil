@@ -42,30 +42,22 @@ module.exports = {
         }
         return this.connection*/
     },
-    /*/!**
-     * 拼写sql存储过程语句
+    /**
+     * 得到sql语句
      * @param {string} sql sql语句
-     * @param {object[]} params 参数数组
-     * @returns {*}
-     *!/
-    getSqlStr: function (sql, params) {
-        let result = "";
-        if (sql.indexOf("call ") != -1) {
-            result = sql.replace(")", "");
-            let b = (sql.length - sql.indexOf("(")) > 2;
-            for (let i = 0; i < params.length; i++) {
-                if (b) {
-                    result += ",";
-                }
-                result += "@" + paramname + (i+1);
-                b = true;
+     * @returns {string}
+     */
+    getSqlStr:function(sql) {
+        let i = 1
+        let index = 0
+        while (index!=-1) {
+            index = sql.indexOf("?")
+            if (index!=-1){
+                sql = _.replace(sql,"?","@" + paramname + i++)
             }
-            result += ")";
-        } else {
-            result = sql;
         }
-        return result;
-    },*/
+        return sql
+    },
     /**
      * 得到getConnection
      * @returns {Promise<Connection>}
@@ -83,6 +75,26 @@ module.exports = {
                 }
             });
         })
+    },
+    /**
+     *
+     * @param {object[]} params sql参数
+     */
+    setParams: function (request, params){
+        for (let i = 0; i < params.length; i++) {
+            switch (typeof params[i]) {
+                case "number":
+                    request.addParameter(paramname+(i+1), TYPES.Numeric, params[i]);
+                    break;
+                case "string":
+                    request.addParameter(paramname+(i+1), TYPES.NVarChar, params[i]);
+                    break;
+                case "boolean":
+                    break;
+                default:
+                    break;
+            }
+        }
     },
     /**
      * 执行sql语句
@@ -107,6 +119,35 @@ module.exports = {
         }
         return result;
     },
+    /**
+     * 执行事务sql语句
+     * @param {string} sql sql语句
+     * @param {object[]} params sql参数
+     * @returns {Promise<object[]>}
+     */
+    execSqlByTransaction: async function (sql, params) {
+        let result = 0
+        params = params || []
+        try {
+            let connection = await this.getConn();
+            try {
+                result = await this.execSqlTransactionByConn(connection, sql, params)
+            } catch (err) {
+                throw err
+            } finally {
+                //connection.close();
+            }
+        } catch (err) {
+            throw err
+        }
+        return result;
+    },
+    /**
+     * 执行存储过程
+     * @param {string} sql sql语句
+     * @param {object[]} param sql参数
+     * @returns {Promise<number>}
+     */
     execProcedure: async function (sql, params) {
         let result = 0
         params = params || []
@@ -126,48 +167,84 @@ module.exports = {
     },
     /**
      * 执行带事务的sql语句
-     * @param {string} poolAlias 连接池对象
+     * @param {Connection} connection 连接对象
      * @param {string} sql sql语句
-     * @param {object[]} param sql参数
+     * @param {object[]} params sql参数
      * @param pool
      * @returns {Promise<object>}
      */
-    execSqlByTransaction: async function (sql, param) {
-        let result = 0
-        try {
-            const transaction = new mssql.Transaction(this.pool)
-            transaction.begin(err => {
-                // ... error checks
-
-                let rolledBack = false
-
-                transaction.on('rollback', aborted => {
-                    // emited with aborted === true
-
-                    rolledBack = true
-                })
-
-                new mssql.Request(transaction)
-                    .query('insert into mytable (bitcolumn) values (2)', (err, result) => {
-                        // insert should fail because of invalid value
-
-                        if (err) {
-                            if (!rolledBack) {
-                                transaction.rollback(err => {
-                                    // ... error checks
-                                })
-                            }
-                        } else {
-                            transaction.commit(err => {
-                                // ... error checks
-                            })
-                        }
-                    })
-            })
-        } catch (err) {
-            throw err
+    execSqlTransactionByConn: async function (connection, sql, params) {
+        /**
+         * 提交事务
+         */
+        function commitTransaction() {
+            connection.commitTransaction((err) => {
+                if (err) {
+                    console.log('commit transaction err: ', err);
+                }
+                //console.log('commitTransaction() done!');
+                //console.log('DONE!');
+                connection.close();
+            });
         }
-        return result;
+        /**
+         * 回滚事务
+         * @param err
+         */
+        function rollbackTransaction(err) {
+            console.log('transaction err: ', err);
+            connection.rollbackTransaction((err) => {
+                if (err) {
+                    console.log('transaction rollback error: ', err);
+                }
+            });
+            connection.close();
+        }
+        /**
+         * 开始事务
+         */
+        function beginTransaction() {
+            connection.beginTransaction((err) => {
+                if (err) {
+                    // If error in begin transaction, roll back!
+                    rollbackTransaction(err);
+                } else {
+                    //console.log('beginTransaction() done');
+                    // If no error, commit transaction!
+                    commitTransaction();
+                }
+            });
+        }
+
+        const start = new Date()
+        let self = this;
+        return new Promise((resolve, reject) => {
+            // Print the rows read
+            let result = [];
+            sql = self.getSqlStr(sql)
+            // Read all rows from table
+            let request = new Request(sql, function(err, rowCount) {
+                const ms = new Date() - start
+                if (err) {
+                    $log4js.sqlErrLogger(sql, params, err, ms)
+                    reject(err)
+                    return;
+                }
+                //删除时可以知识处理了多少数据
+                if (result.length==0&&rowCount!=0){
+                    result = rowCount
+                }
+                $log4js.sqlInfoLogger(sql, params, ms)
+                beginTransaction()
+                resolve(result)
+            });
+            if (params) {
+                self.setParams(request, params)
+            }
+            //connection.callProcedure()
+            // Execute SQL statement
+            connection.execSql(request);
+        })
     },
     /**
      * 得到所有表数据
@@ -267,9 +344,11 @@ module.exports = {
      */
     execSqlByConn: function (connection, sql, params) {
         const start = new Date()
+        let self = this
         return new Promise((resolve, reject) => {
             // Print the rows read
             let result = [];
+            sql = self.getSqlStr(sql)
             // Read all rows from table
             let request = new Request(sql, function(err, rowCount) {
                 const ms = new Date() - start
@@ -286,13 +365,7 @@ module.exports = {
                 resolve(result)
             });
             if (params) {
-                for (let i = 0; i < params.length; i++) {
-                    if (typeof params[i] == "number") {
-                        request.addParameter(paramname+(i+1), TYPES.Numeric, params[i]);
-                    } else if (typeof params[i] == "string") {
-                        request.addParameter(paramname+(i+1), TYPES.NVarChar, params[i]);
-                    }
-                }
+                self.setParams(request, params)
             }
             request.on('row', function(columns) {
                 //当是返回的集合时设置为数组
@@ -312,7 +385,6 @@ module.exports = {
         })
     },
     //执行存储过程的相关函数=========================================================
-
     /**
      * 执行sql语句
      * @param {Connection} connection 连接对象
