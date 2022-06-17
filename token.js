@@ -125,35 +125,31 @@ const token = {
     setSessionToken: function (ctx){
         let token = this.getTokenString(ctx)
         if (ctx.session.token != token) {
-            let resDecode = this.getToken(token)
+            /*let resDecode = this.getToken(token)
             if (!resDecode) return
-            let data = resDecode.payload.data
-            _.assign(ctx.session,data,{token:token})
+            let data = resDecode.payload.data*/
+            _.assign(ctx.session,{token:token})
         }
     },
-    /**
+    /*/!**
      * 建立cookie
      * @param ctx
-     */
+     *!/
     setCookieToken: function (ctx){
         let token = this.getTokenString(ctx)
         //12个小时过期
-        ctx.cookies.set('token', token, {signed: true, maxAge: 12 * 60 * 60 * 1000})
-    },
+        //ctx.cookies.set('token', token, {signed: true, maxAge: 12 * 60 * 60 * 1000})
+    },*/
     /**
      * 得到用户pkid
      * @returns {Promise<string>}
      */
     getUserData: function (ctx) {
         let result = null
-        if (!$util.isEmpty(ctx.session.pkid)){
-            result = ctx.session
-        }else{
-            let token = this.getTokenString(ctx)
-            let resDecode = this.getToken(token)
-            if (!resDecode) return result
-            result = resDecode.payload.data
-        }
+        let token = this.getTokenString(ctx)
+        let resDecode = this.getToken(token)
+        if (!resDecode) return result
+        result = resDecode.payload.data
         return result
     }
 }
