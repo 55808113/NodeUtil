@@ -15,7 +15,7 @@ const token = {
      * @returns {string} 如果是null，表示没有取得
      */
     getTokenString: function (ctx){
-        return ctx.session.token || ctx.request.body.token || ctx.request.query.token || ctx.request.headers['authorization'] || ctx.request.headers['token'] || ctx.cookies.get('token');
+        return ctx.request.body.token || ctx.request.query.token || ctx.request.headers['authorization'] || ctx.request.headers['token'] || ctx.cookies.get('token');
     },
     /**
      * 解密Token
@@ -109,28 +109,28 @@ const token = {
      * @returns {object} 如果是null，表示没有取得
      */
     checkToken: function (ctx){
-        if (ctx.session.token){
+        /*if (ctx.session.token){
             return true
-        }
+        }*/
         let token = this.getTokenString(ctx)
         let resDecode = this.getToken(token)
         if (!resDecode) return false
         return true
     },
-    /**
+    /*/!**
      * 设置session的对象
      * @param {string} token
      * @returns {object} 如果是null，表示没有取得
-     */
+     *!/
     setSessionToken: function (ctx){
         let token = this.getTokenString(ctx)
         if (ctx.session.token != token) {
-            /*let resDecode = this.getToken(token)
+            /!*let resDecode = this.getToken(token)
             if (!resDecode) return
-            let data = resDecode.payload.data*/
+            let data = resDecode.payload.data*!/
             _.assign(ctx.session,{token:token})
         }
-    },
+    },*/
     /*/!**
      * 建立cookie
      * @param ctx
