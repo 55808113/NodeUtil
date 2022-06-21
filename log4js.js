@@ -63,7 +63,9 @@ log4js.configure({
         sqlInfo: {appenders: ['sqlInfo'], level: 'info'},
         default: {appenders: ['response'], level: 'info'}
     },
-    replaceConsole: true
+    replaceConsole: true,
+    //添加pm2的支持。如果是pm2需要添加这个配置才能打印出日志
+    disableClustering: process.env.NODE_APP_INSTANCE !=undefined?true:false
 })
 
 
