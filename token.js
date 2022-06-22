@@ -2,7 +2,6 @@
  * 认证对象
  */
 const chalk = require('chalk')
-const url = require('url')
 const $log4js = require('./log4js')
 const $convert = require('./convert')
 const $crypto = require('./crypto')
