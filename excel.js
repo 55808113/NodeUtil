@@ -103,6 +103,16 @@ module.exports = {
     },
     /**
      * 得到一个sheet对象
+     * @param {object} colInfos message的对象信息
+     * @param rows 导出的数据
+     * @returns {{}}
+     */
+    getConfigbyData: function (colInfos, rows){
+        let headerObj = this.convertColInfosToHeaderObj(colInfos)
+        return this.getConfig(headerObj,rows)
+    },
+    /**
+     * 得到一个sheet对象
      * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param rows 导出的数据
      * @returns {{}}
