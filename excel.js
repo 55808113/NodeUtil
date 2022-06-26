@@ -22,14 +22,6 @@ module.exports = {
      */
     impFailpath: path.join(process.cwd(), '/upload/ImpErr'),
     /**
-     * 对导入的headers进行排序和过滤
-     * @param headers
-     */
-    orderByheaders: function (headers) {
-        let rows = [];
-
-    },
-    /**
      * mssql的类型转换为excel的类型
      * @param datatype
      */
@@ -110,15 +102,14 @@ module.exports = {
         return result;
     },
     /**
-     * 导出excel数据流
-     * @param {string} title 导出的文件名
-     * @param {object[]}  headers 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
-     * @param {object[]} rows 导出的数据
-     * @returns {*}
+     * 得到一个sheet对象
+     * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
+     * @param rows 导出的数据
+     * @returns {{}}
      */
-    expExcelStream: function (title, headers, rows) {
-
-        function getConf(){
+    getConfig: function (headerObj, rows){
+        //得到config对象
+        function getConf(headers){
             function getCol(title, type) {
                 //格式判断
                 function format(val, opt) {
@@ -181,7 +172,7 @@ module.exports = {
             let conf = {};
             //可以设置样式
             conf.stylesXmlFile = path.join(__dirname,"excel_styles.xml");
-            conf.name = "sheet";
+            //conf.name = "sheet";可心不用写。
             conf.cols = [];
             for (let item of headers) {
                 //判断json数据并且在headers上生成需要的对象
@@ -219,7 +210,7 @@ module.exports = {
             return conf
         }
         //得到数据
-        function getDatas(){
+        function getDatas(headers,rows){
             let datas = [];
             for (let i = 0; i < rows.length; i++) {
                 let data = []
@@ -265,11 +256,65 @@ module.exports = {
             }
             return datas
         }
+        //通过header对象得到headers的数组
+        function getHeaders(headerObj){
+            let headers = []
+            for (let key in headerObj) {
+                let item = headerObj[key]
+                /*//不是对象继续执行
+                if (!_.isObject(item)) continue*/
+                let columntype = "string"
+                if (item.type) columntype = item.type
+                let header = {
+                    name: key,
+                    type: columntype,
+                    title: item.title,
+                    order: item.order,
+                    /**
+                     * 像类型这样的，这个是类型对应的名称
+                     * data: [
+                     {text:"人员",value:"0"},
+                     {text:"科室",value:"1"}
+                     ]
+                     */
+                    data: item.data,
+                    //模板的字段
+                    templaterows: item.templaterows
+                };
+                headers.push(header);
+            }
+            return _.orderBy(headers, ['order'], ['asc']);
+        }
         if ($util.isEmpty(rows)){
             throw new Error("没有查询到要导出的数据！")
         }
-        let conf = getConf()
-        conf.rows = getDatas();
+        let headers = getHeaders(headerObj)
+        let conf = getConf(headers)
+        conf.rows = getDatas(headers,rows);
+        return conf
+    },
+    /**
+     * 转换colInfos到HeaderObj
+     * @param colInfos
+     */
+    convertColInfosToHeaderObj: function (colInfos){
+        let headerObj = {};
+        for (let key in colInfos) {
+            let item = colInfos[key]
+            if ($convert.getBool(item.sfdc)) {
+                headerObj[key] = item
+            }
+        }
+        return headerObj
+    },
+    /**
+     * 导出excel数据流
+     * @param {object}  headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
+     * @param {object[]} rows 导出的数据
+     * @returns {*}
+     */
+    expExcelStream: function (headerObj, rows) {
+        let conf = this.getConfig(headerObj, rows)
         return Buffer.from(nodeExcel.execute(conf), 'binary');
     },
     /**
@@ -285,33 +330,7 @@ module.exports = {
      $excel.expExcel(ctx, $message.card.title, headers, rows);
      */
     expExcel: function (ctx, title, headerObj, rows) {
-        let cols = []
-        for (let key in headerObj) {
-            let item = headerObj[key]
-            /*//不是对象继续执行
-            if (!_.isObject(item)) continue*/
-            let columntype = "string"
-            if (item.type) columntype = item.type
-            let col = {
-                name: key,
-                type: columntype,
-                title: item.title,
-                order: item.order,
-                /**
-                 * 像类型这样的，这个是类型对应的名称
-                 * data: [
-                 {text:"人员",value:"0"},
-                 {text:"科室",value:"1"}
-                 ]
-                 */
-                data: item.data,
-                //模板的字段
-                templaterows: item.templaterows
-            };
-            cols.push(col);
-        }
-        cols = _.orderBy(cols, ['order'], ['asc']);
-        let excelStream = this.expExcelStream(title, cols, rows)
+        let excelStream = this.expExcelStream(headerObj, rows)
         ctx.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         ctx.set("Content-Disposition", "attachment; filename=" + encodeURIComponent(title) + ".xlsx");
         ctx.body = excelStream
@@ -320,18 +339,30 @@ module.exports = {
      * 根据配置的信息表导出excel
      * @param ctx
      * @param {string} title 导出的文件名
-     * @param {object} colresults 导出的头文件格式
+     * @param {object} colInfos 导出的头文件格式
      * @param {object[]} rows 导出的数据
      */
-    expExcelbyData: function (ctx, title, colresults, rows) {
-        let headers = {};
-        for (let key in colresults) {
-            let item = colresults[key]
-            if ($convert.getBool(item.sfdc)) {
-                headers[key] = item
-            }
-        }
-        this.expExcel(ctx, title, headers, rows);
+    expExcelbyData: function (ctx, title, colInfos, rows) {
+        let headerObj = this.convertColInfosToHeaderObj(colInfos)
+        this.expExcel(ctx, title, headerObj, rows);
+    },
+    /**
+     * 多个sheet的导出 通过getConfig的方法得到数据。然后把数据传到这个函数进行导出
+     * @param ctx
+     * @param {string} title 导出的文件名
+     * @param {object[]} configs getConfig的数据数组
+     * let configs = []
+     let config1 = $excel.getConfig($excel.convertColInfosToHeaderObj($message.process_request_kpi_quality),result)
+     let config2 = $excel.getConfig($excel.convertColInfosToHeaderObj($message.process_request_kpi_quality),result)
+     configs.push(config1)
+     configs.push(config2)
+     $excel.expExcelbyConfig(ctx,$message.process_request_kpi_quality.title,configs)
+     */
+    expExcelbyConfig: function (ctx, title, configs){
+        let excelStream = Buffer.from(nodeExcel.execute(configs), 'binary');
+        ctx.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        ctx.set("Content-Disposition", "attachment; filename=" + encodeURIComponent(title) + ".xlsx");
+        ctx.body = excelStream
     },
     /**
      * 根据Excel模板导出excel
@@ -447,7 +478,7 @@ module.exports = {
                 for (let key in failinfo) {
                     headers.push({name: key, title: key, type: convertType(failinfo[key])})
                 }
-                let excelStream = this.expExcelStream("错误导入数据", headers, failInfos)
+                let excelStream = this.expExcelStream(headers, failInfos)
                 $file.writeFile(path.join(filepath, resultInfo.failfilename), excelStream)
             }
             return resultInfo
