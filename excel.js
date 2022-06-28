@@ -130,6 +130,10 @@ module.exports = {
                         return v.toString();
                     }*/
                     switch (type){
+                        case "string":
+                            opt.cellType = "string";
+                            val = $convert.getString(val)
+                            break;
                         case "date":
                             opt.cellType = "string";
                             val = $convert.getDateString(val)
