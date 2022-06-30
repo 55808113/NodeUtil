@@ -2,7 +2,7 @@
  * 操作Excel相关函数
  *
  * */
-const nodeExcel = require('excel-export')
+const nodeExcel = require('@tony_pig/excel-export2')
 const xlsx = require('xlsx')
 const _ = require('lodash')
 const fs = require('fs')
@@ -114,10 +114,11 @@ module.exports = {
     /**
      * 得到一个sheet对象
      * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
-     * @param rows 导出的数据
+     * @param {object[]} rows 导出的数据
+     * @param {string} sheetTitle sheet标题
      * @returns {{}}
      */
-    getConfig: function (headerObj, rows){
+    getConfig: function (headerObj, rows, sheetTitle){
         //得到config对象
         function getConf(headers){
             function getCol(title, type) {
@@ -166,7 +167,7 @@ module.exports = {
                 //所有的属性类型都是string
                 col.type = type
                 //width不好使
-                //col.width = 50.7109375
+                col.width = 2.7109375
                 //标题的样式索引
                 //<cellXfs count="4">
                 //     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
@@ -186,7 +187,10 @@ module.exports = {
             let conf = {};
             //可以设置样式
             conf.stylesXmlFile = path.join(__dirname,"excel_styles.xml");
-            //conf.name = "sheet";可心不用写。
+            if (sheetTitle){
+                conf.name = sheetTitle;
+            }
+
             conf.cols = [];
             for (let item of headers) {
                 //判断json数据并且在headers上生成需要的对象
