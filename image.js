@@ -12,10 +12,15 @@ const $crypto = require('./crypto')
 const _ = require('lodash')
 
 module.exports = {
-    /**
-     * 缩略图目录
-     */
-    thumbnailpath: path.join(process.cwd(), "/upload/thumb/"),
+    options:{
+        /**
+         * 缩略图目录
+         */
+        thumbnailpath: path.join(process.cwd(), "/upload/thumb/")
+    },
+    init: function (opts){
+        _.assign(this.options,opts)
+    },
     /**
      * 生成缩略图
      * @param {string} filepath 文件路径
@@ -63,7 +68,8 @@ module.exports = {
      * @param {string} filepath 原路径
      */
     getThumbnailpath: function (filepath) {
-        return path.join(this.thumbnailpath, $file.MD5FileName(filepath));
+        let opts = this.options
+        return path.join(opts.thumbnailpath, $file.MD5FileName(filepath));
     },
     /**
      * 能否生成缩略图
@@ -157,16 +163,17 @@ module.exports = {
         }
 
         let obj = this
+        let opts = this.options
         //如果不是图片返回空值
         //if (_.indexOf(['.png', '.jpg', '.jpeg', '.bmp'], path.extname(filepath).toLowerCase()) == -1) return false
         option = _.assign({width: 64, height: 64, quality: 40}, option)
         //通过md5加密得到唯一的名称
         //thumbnailname = $crypto.MD5(filepath);
-        $file.createFolder(this.thumbnailpath)
+        $file.createFolder(opts.thumbnailpath)
         if ($file.isDirectory(filepath)){
             resizeByDir({
                 src: filepath,
-                //destdir: this.thumbnailpath,
+                //destdir: opts.thumbnailpath,
                 width: option.width,
                 height: option.height
             });

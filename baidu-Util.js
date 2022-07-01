@@ -9,9 +9,9 @@ const AipBodyAnalysisClient = require("baidu-aip-sdk").bodyanalysis;
 const AipSpeechClient = require("baidu-aip-sdk").speech;
 const $util = require('./util')
 // 设置APPID/AK/SK
-const APP_ID = "22213960";
-const API_KEY = "bClpb7c0UzO3sgao97tFA7ze";
-const SECRET_KEY = "fBLKWt2vCiYNBXnORosswZDs2D6UkC2V";
+const APP_ID = "xxxxxxxx";
+const API_KEY = "xxxxxxxxxxxxxxxx";
+const SECRET_KEY = "xxxxxxxxxxxxxxxxxxxx";
 /**
  * 人脸模块
  * @returns {face}

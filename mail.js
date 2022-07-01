@@ -1,23 +1,33 @@
 /**
  * 邮件服务
  */
+const _ = require('lodash')
 const nodemailer = require('nodemailer');
 
 module.exports = {
     transporter: null,
+    options:{
+        service:'QQ',
+        user:'55808113@qq.com',
+        pass:'xxxxxxxxx' //邮箱第三方登录授权码
+    },
+    init: function (opts){
+        _.assign(this.options,opts)
+    },
     /**
      * 初始化
      */
-    _init: function () {
+    _createTransporter: function () {
+        let opts = this.options
         this.transporter = nodemailer.createTransport({
-            service: 'QQ',
+            service: opts.service,
             auth: {
-                user: '55808113@qq.com',//发送者邮箱
-                pass: 'yuwzjhffmccpbige' //邮箱第三方登录授权码
+                user: opts.user,//发送者邮箱
+                pass: opts.pass //邮箱第三方登录授权码
             },
             debug: true
         }, {
-            from: '55808113@qq.com',//发送者邮箱
+            from: opts.user,//发送者邮箱
             headers: {
                 'X-Laziness-level': 1000
             }
@@ -66,7 +76,7 @@ module.exports = {
      */
     sendMail: function (message) {
         return new Promise(async (resolve, reject) => {
-            if (!this.transporter) this._init()
+            if (!this.transporter) this._createTransporter()
             let transporter = this.transporter
             transporter.sendMail(message, (error, info) => {
                 if (error) {

@@ -2,7 +2,7 @@
  * 操作Excel相关函数
  *
  * */
-const nodeExcel = require('@tony_pig/excel-export2')
+const nodeExcel = require('@sunxdd/excel-export')
 const xlsx = require('xlsx')
 const _ = require('lodash')
 const fs = require('fs')
@@ -17,10 +17,15 @@ const $sqlhelper = require('./mysql-helper')
 
 module.exports = {
     //////////////////////////////////EXCEL文件操作/////////////////////////////////////////
-    /**
-     * 错误的文件目录
-     */
-    impFailpath: path.join(process.cwd(), '/upload/ImpErr'),
+    options:{
+        /**
+         * 错误的文件目录
+         */
+        impFailpath: path.join(process.cwd(), '/upload/ImpErr')
+    },
+    init: function (opts){
+        _.assign(this.options,opts)
+    },
     /**
      * mssql的类型转换为excel的类型
      * @param datatype
@@ -449,7 +454,7 @@ module.exports = {
         }
         options = _.assign({},options,opts)
         try {
-            let filepath = this.impFailpath
+            let filepath = this.options.impFailpath
             let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
             await options.onUploadFileSuccess.call(this,ctx)
             let rows = xlsxDatatoJson(uploaddata)

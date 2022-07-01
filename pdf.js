@@ -20,14 +20,20 @@
  * htmlpdf.pdf(dataBinding,'invoice.html'
  * */
 const fs = require("fs")
+const _ = require('lodash')
 const path = require("path")
 const handlebars = require("handlebars")
 const pdf = require('html-pdf')
 module.exports = {
-    /**
-     * 使用前需要设置一下phantomPath的路径。
-     */
-    phantomPath:path.join(process.cwd(),"lib/phantomjs-2.1.1-window/bin/phantomjs.exe"),
+    options:{
+        /**
+         * 使用前需要设置一下phantomPath的路径。
+         */
+        phantomPath:path.join(process.cwd(),"lib/phantomjs-2.1.1-window/bin/phantomjs.exe")
+    },
+    init: function (opts){
+        _.assign(this.options,opts)
+    },
     /**
      * 导出pdf文件并下载
      * @param ctx
@@ -40,7 +46,8 @@ module.exports = {
     pdfDownload: function (ctx, jsondata, htmlpath, title, bPreview = false) {
         let finalHtml = this._templateToHtml(jsondata, htmlpath)
         title = title || 'data'
-        let phantomPath = this.phantomPath
+        let opts = this.options
+        let phantomPath = opts.phantomPath
         //let options = { format: 'Letter' };
         return new Promise((resolve, reject) => {
             pdf.create(finalHtml,{phantomPath:phantomPath}).toBuffer(function (err, buffer) {
