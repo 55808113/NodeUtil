@@ -142,14 +142,20 @@ module.exports = {
                             break;
                         case "date":
                             opt.cellType = "string";
+                            //居中对齐
+                            opt.styleIndex = 1;
                             val = $convert.getDateString(val)
                             break;
                         case "datetime":
                             opt.cellType = "string";
+                            //居中对齐
+                            opt.styleIndex = 1;
                             val = $convert.getDateTimeString(val)
                             break;
                         case "bool":
                             opt.cellType = "string";
+                            //居中对齐
+                            opt.styleIndex = 1;
                             if (!$util.isEmpty(val)) {
                                 if ($convert.getBool(val)) {
                                     val = "是";
@@ -167,26 +173,46 @@ module.exports = {
 
                     return val;
                 }
-                let col = {};
-                col.caption = title;
-                //所有的属性类型都是string
-                col.type = type
-                //width不好使
-                col.width = 2.7109375
-                //标题的样式索引
-                //<cellXfs count="4">
-                //     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
-                //     <xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
-                //     <xf numFmtId="14" fontId="0" fillId="2" borderId="1" xfId="1" applyNumberFormat="1" applyFont="1"/>
-                //     <xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="1" applyFont="1"/>
-                //   </cellXfs>
-                // 这个就是style.xml这个节点cellXfs中的索引号。
-                col.captionStyleIndex = 2;
-                //日期格式要改变成string否则显示有问题
-                col.beforeCellWrite = function (row, cellData, eOpt) {
-                    let value = format(cellData, eOpt);
-                    return value;
+                //得到宽度
+                function getColWidth(type){
+                    let result = 15
+                    switch (type){
+                        case "string":
+                            result = 15
+                            break;
+                        case "date":
+                            result = 12
+                            break;
+                        case "datetime":
+                            result = 23
+                            break;
+                    }
+                    return result
                 }
+                let col = {
+                    caption:title,
+                    //所有的属性类型都是string
+                    type:type,
+                    //width不好使
+                    width:getColWidth(type),
+                    /**
+                     * 标题的样式索引
+                     * //<cellXfs count="4">
+                     //     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+                     //     <xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+                     //     <xf numFmtId="14" fontId="0" fillId="2" borderId="1" xfId="1" applyNumberFormat="1" applyFont="1"/>
+                     //     <xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="1" applyFont="1"/>
+                     //   </cellXfs>
+                     // 这个就是style.xml这个节点cellXfs中的索引号。
+                     */
+                    captionStyleIndex:2,
+                    //日期格式要改变成string否则显示有问题
+                    beforeCellWrite: function (row, cellData, eOpt) {
+                        let value = format(cellData, eOpt);
+                        return value;
+                    }
+                };
+
                 return col
             }
             let conf = {};
