@@ -267,7 +267,11 @@ module.exports = {
                     } else {
                         //得到有data类型的话。取真实数据的值
                         if ($util.isNotEmpty(item.data)){
-                            let index = _.findIndex(item.data,['value',val])
+                            let index = _.findIndex(item.data,
+                                function(o) {
+                                    return $convert.getString(o.value) == $convert.getString(val);
+                                }
+                            )
                             if (index!=-1){
                                 val = item.data[index].text
                             }
