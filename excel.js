@@ -15,22 +15,25 @@ const $upload = require('./upload')
 const $file = require('./file')
 const $sqlhelper = require('./mysql-helper')
 
-module.exports = {
+class excel {
+    constructor() {
+
+    }
     //////////////////////////////////EXCEL文件操作/////////////////////////////////////////
-    options:{
+    options = {
         /**
          * 错误的文件目录
          */
         impFailpath: path.join(process.cwd(), '/upload/ImpErr')
-    },
-    init: function (opts){
+    }
+    init (opts){
         _.assign(this.options,opts)
-    },
+    }
     /**
      * mssql的类型转换为excel的类型
      * @param datatype
      */
-    convertMssqlType: function (datatype){
+    convertMssqlType (datatype){
         let result = datatype
         switch (datatype){
             case "bit":
@@ -71,12 +74,12 @@ module.exports = {
                 break;
         }
         return result;
-    },
+    }
     /**
      * mysql的类型转换为excel的类型
      * @param datatype
      */
-    convertMysqlType: function (datatype){
+    convertMysqlType (datatype){
         let result = datatype
         switch (datatype){
             case "tinyint":
@@ -105,17 +108,17 @@ module.exports = {
                 break;
         }
         return result;
-    },
+    }
     /**
      * 得到一个sheet对象
      * @param {object} colInfos message的对象信息
      * @param rows 导出的数据
      * @returns {{}}
      */
-    getConfigbyData: function (colInfos, rows){
+    getConfigbyData (colInfos, rows){
         let headerObj = this.convertColInfosToHeaderObj(colInfos)
         return this.getConfig(headerObj,rows)
-    },
+    }
     /**
      * 得到一个sheet对象
      * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
@@ -123,9 +126,9 @@ module.exports = {
      * @param {string} sheetTitle sheet标题
      * @returns {{}}
      */
-    getConfig: function (headerObj, rows, sheetTitle){
+    getConfig (headerObj, rows, sheetTitle){
         //得到config对象
-        function getConf(headers){
+        function _getConf(headers){
             function getCol(title, type) {
                 //格式判断
                 function format(val, opt) {
@@ -259,7 +262,7 @@ module.exports = {
             return conf
         }
         //得到数据
-        function getDatas(headers,rows){
+        function _getDatas(headers,rows){
             let datas = [];
             for (let i = 0; i < rows.length; i++) {
                 let data = []
@@ -310,7 +313,7 @@ module.exports = {
             return datas
         }
         //通过header对象得到headers的数组
-        function getHeaders(headerObj){
+        function _getHeaders(headerObj){
             let headers = []
             for (let key in headerObj) {
                 let item = headerObj[key]
@@ -341,16 +344,16 @@ module.exports = {
         if ($util.isEmpty(rows)){
             throw new Error("没有查询到要导出的数据！")
         }
-        let headers = getHeaders(headerObj)
-        let conf = getConf(headers)
-        conf.rows = getDatas(headers,rows);
+        let headers = _getHeaders(headerObj)
+        let conf = _getConf(headers)
+        conf.rows = _getDatas(headers,rows);
         return conf
-    },
+    }
     /**
      * 转换colInfos到HeaderObj
      * @param colInfos
      */
-    convertColInfosToHeaderObj: function (colInfos){
+    convertColInfosToHeaderObj (colInfos){
         let headerObj = {};
         for (let key in colInfos) {
             let item = colInfos[key]
@@ -359,17 +362,17 @@ module.exports = {
             }
         }
         return headerObj
-    },
+    }
     /**
      * 导出excel数据流
      * @param {object}  headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
      * @returns {*}
      */
-    expExcelStream: function (headerObj, rows) {
+    expExcelStream (headerObj, rows) {
         let conf = this.getConfig(headerObj, rows)
         return Buffer.from(nodeExcel.execute(conf), 'binary');
-    },
+    }
     /**
      * 导出excel
      * @param ctx
@@ -382,12 +385,12 @@ module.exports = {
      headers.xb = $message.card.xb;
      $excel.expExcel(ctx, $message.card.title, headers, rows);
      */
-    expExcel: function (ctx, title, headerObj, rows) {
+    expExcel (ctx, title, headerObj, rows) {
         let excelStream = this.expExcelStream(headerObj, rows)
         ctx.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         ctx.set("Content-Disposition", "attachment; filename=" + encodeURIComponent(title) + ".xlsx");
         ctx.body = excelStream
-    },
+    }
     /**
      * 根据配置的信息表导出excel
      * @param ctx
@@ -395,10 +398,10 @@ module.exports = {
      * @param {object} colInfos 导出的头文件格式
      * @param {object[]} rows 导出的数据
      */
-    expExcelbyData: function (ctx, title, colInfos, rows) {
+    expExcelbyData (ctx, title, colInfos, rows) {
         let headerObj = this.convertColInfosToHeaderObj(colInfos)
         this.expExcel(ctx, title, headerObj, rows);
-    },
+    }
     /**
      * 多个sheet的导出 通过getConfig的方法得到数据。然后把数据传到这个函数进行导出
      * @param ctx
@@ -411,12 +414,12 @@ module.exports = {
      configs.push(config2)
      $excel.expExcelbyConfig(ctx,$message.process_request_kpi_quality.title,configs)
      */
-    expExcelbyConfig: function (ctx, title, configs){
+    expExcelbyConfig (ctx, title, configs){
         let excelStream = Buffer.from(nodeExcel.execute(configs), 'binary');
         ctx.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         ctx.set("Content-Disposition", "attachment; filename=" + encodeURIComponent(title) + ".xlsx");
         ctx.body = excelStream
-    },
+    }
     /**
      * 根据Excel模板导出excel
      * @param ctx
@@ -425,7 +428,7 @@ module.exports = {
      * @param {object[]} rows 导出的数据
      * @returns {Promise<unknown>}
      */
-    expExcelbyTemplate: function (ctx, title, templatePath, rows) {
+    expExcelbyTemplate (ctx, title, templatePath, rows) {
         let templateFs = $file.readFile(path.join(process.cwd(), templatePath),'')
         return new Promise((resolve, reject) => {
             ejsexcel.renderExcelCb(templateFs, rows, function (err, exlBuf) {
@@ -439,7 +442,7 @@ module.exports = {
                 resolve()
             })
         })
-    },
+    }
     /**
      * 导入excel文件
      * @param ctx
@@ -451,7 +454,7 @@ module.exports = {
      *   failfilename: string //错误的文件名
      * }
      */
-    impExcel: async function (ctx, opts) {
+    async impExcel (ctx, opts) {
         //文件数据转xlsx格式
         function xlsxDatatoJson(xlsData) {
             let workbook = xlsx.read(xlsData);
@@ -483,61 +486,58 @@ module.exports = {
             }
         }
         options = _.assign({},options,opts)
+        let filepath = this.options.impFailpath
+        let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
+        await options.onUploadFileSuccess.call(this,ctx)
+        let rows = xlsxDatatoJson(uploaddata)
+        let failInfos = []
+        let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
+        let connection = await $sqlhelper.getConn();
         try {
-            let filepath = this.options.impFailpath
-            let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
-            await options.onUploadFileSuccess.call(this,ctx)
-            let rows = xlsxDatatoJson(uploaddata)
-            let failInfos = []
-            let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
-            let connection = await $sqlhelper.getConn();
-            try {
-                for (let i = 0; i < rows.length; i++) {
-                    let item = rows[i];
-                    try {
-                        let param = await options.onSetParams.call(this,item)
-                        if (!param) {
-                            throw "callbackParam参数没有设置插入的数据！"
-                        }
-                        //如果返回数组代表是一下导入多条数据。
-                        if (_.isArray(param)){
-                            for (const paramElement of param) {
-                                await $sqlhelper.execSqlByConn(connection, options.sql, paramElement)
-                            }
-                        }else{
-                            await $sqlhelper.execSqlByConn(connection, options.sql, param)
-                        }
-                        resultInfo.success = resultInfo.success + 1;
-                    } catch (err) {
-                        let info = _.assign({}, item, {"错误行号": String(i + 2), "错误内容": err.message})
-                        //把导入的所有数据放到info里
-                        failInfos.push(info)
+            for (let i = 0; i < rows.length; i++) {
+                let item = rows[i];
+                try {
+                    let param = await options.onSetParams.call(this,item)
+                    if (!param) {
+                        throw "callbackParam参数没有设置插入的数据！"
                     }
+                    //如果返回数组代表是一下导入多条数据。
+                    if (_.isArray(param)){
+                        for (const paramElement of param) {
+                            await $sqlhelper.execSqlByConn(connection, options.sql, paramElement)
+                        }
+                    }else{
+                        await $sqlhelper.execSqlByConn(connection, options.sql, param)
+                    }
+                    resultInfo.success = resultInfo.success + 1;
+                } catch (err) {
+                    let info = _.assign({}, item, {"错误行号": String(i + 2), "错误内容": err.message})
+                    //把导入的所有数据放到info里
+                    failInfos.push(info)
                 }
-                connection.release();
-            } catch (err) {
-                connection.release();
-                throw err
             }
-
-            resultInfo.fail = failInfos.length;
-            //如果有错误的话。把错误信息保存到本地让客户下载
-            if (resultInfo.fail > 0) {
-
-                $file.createFolder(filepath)
-
-                let headers = [];
-                let failinfo = failInfos[0];
-                for (let key in failinfo) {
-                    headers.push({name: key, title: key, type: convertType(failinfo[key])})
-                }
-                let excelStream = this.expExcelStream(headers, failInfos)
-                $file.writeFile(path.join(filepath, resultInfo.failfilename), excelStream)
-            }
-            return resultInfo
+            connection.release();
         } catch (err) {
+            connection.release();
             throw err
         }
+
+        resultInfo.fail = failInfos.length;
+        //如果有错误的话。把错误信息保存到本地让客户下载
+        if (resultInfo.fail > 0) {
+
+            $file.createFolder(filepath)
+
+            let headers = [];
+            let failinfo = failInfos[0];
+            for (let key in failinfo) {
+                headers.push({name: key, title: key, type: convertType(failinfo[key])})
+            }
+            let excelStream = this.expExcelStream(headers, failInfos)
+            $file.writeFile(path.join(filepath, resultInfo.failfilename), excelStream)
+        }
+        return resultInfo
     }
     //==============================================================
 };
+module.exports = new excel()

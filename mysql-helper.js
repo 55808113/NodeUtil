@@ -8,33 +8,30 @@ const $log4js = require('./log4js')
 const $util = require('./util')
 const $convert = require('./convert')
 
-module.exports = {
-    options:{
+class mysqlHelper {
+    constructor() {
 
-    },
-    init:function (opts){
-        _.assign(this.options,opts)
-    },
+    }
+    //连接池
+    _pool = null
     /**
      * Create a new Pool instance.
      * @param {object|string} config Configuration or connection string for new MySQL connections
      * @return {Pool} A new MySQL pool
      * @public
      */
-    createPool: function (config){
+    createPool (config){
         let self = this;
-        this.pool = mysql.createPool(config)
-        return this.pool
-    },
-    //连接池
-    pool: null,
+        this._pool = mysql.createPool(config)
+        return this._pool
+    }
     /**
      * 拼写sql存储过程语句
      * @param {string} sql sql语句
      * @param {object[]} params 参数数组
      * @returns {*}
      */
-    getSqlStr: function (sql, params) {
+    getSqlStr (sql, params) {
         let result = "";
         if (sql.indexOf("call ") != -1) {
             result = sql.replace(")", "");
@@ -51,16 +48,16 @@ module.exports = {
             result = sql;
         }
         return result;
-    },
+    }
     /**
      * 得到getConnection
      * @returns {Promise<Connection>}
      */
-    getConn: function () {
+    getConn () {
         let self = this;
         return new Promise((resolve, reject) => {
             const start = new Date()
-            self.pool.getConnection(function (err, connection) {
+            self._pool.getConnection(function (err, connection) {
                 const ms = new Date() - start
                 if (err) {
                     $log4js.sqlErrLogger("创建连接池", "错误", err, ms)
@@ -72,77 +69,71 @@ module.exports = {
                 resolve(connection)
             })
         })
-    },
+    }
     /**
      * 执行sql语句，自己传pool对象
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<object[]>}
      */
-    execSql: async function (sql, params) {
+    async execSql (sql, params= []) {
         let result = 0
         params = params || []
+
+        let connection = await this.getConn();
         try {
-            let connection = await this.getConn();
-            try {
-                result = await this.execSqlByConn(connection, sql, params)
-            } catch (err) {
-                throw err
-            } finally {
-                this.pool.releaseConnection(connection)
-            }
+            result = await this.execSqlByConn(connection, sql, params)
         } catch (err) {
             throw err
+        } finally {
+            this._pool.releaseConnection(connection)
         }
+
         return result;
-    },
+    }
     /**
      * 执行带事务的sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<number>}
      */
-    execSqlByTransaction: async function (sql, params) {
+    async execSqlByTransaction (sql, params) {
         let result = 0
+        let connection = await this.getConn();
         try {
-            let connection = await this.getConn();
             await this.beginTransaction(connection);
-            try {
-                result = await this.execSqlByConn(connection, sql, params)
-                connection.commit((error) => {
-                    if(error) {
-                        throw error;
-                        console.log('事务提交失败')
-                    }
-                })
-            } catch (err) {
-                connection.rollback();
-                throw err
-            } finally {
-                this.pool.releaseConnection(connection)
-            }
+            result = await this.execSqlByConn(connection, sql, params)
+            connection.commit((error) => {
+                if(error) {
+                    throw error;
+                    console.log('事务提交失败')
+                }
+            })
         } catch (err) {
+            connection.rollback();
             throw err
+        } finally {
+            this._pool.releaseConnection(connection)
         }
         return result;
-    },
+    }
     /**
      * 得到所有表数据
      * @returns {Promise<object>}
      */
-    selectAllByTableName: async function(){
+    async selectAllByTableName (){
         let sql = "SELECT table_name tablename, ENGINE, table_comment tablecomment, create_time createTime FROM information_schema.TABLES WHERE table_schema = (SELECT DATABASE())"
         return await this.execSql(sql);
-    },
+    }
     /**
      * 得到某个表的所有字段名称
      * @param {string} tablename 查询的表名
      * @returns {Promise<Object>}
      */
-    selectAllByTableFieldName: async function(tablename) {
+    async selectAllByTableFieldName (tablename) {
         let sql = "SELECT column_name columnName,data_type dataType,column_comment columnComment,column_key columnKey,extra FROM information_schema.COLUMNS WHERE table_name = ? AND table_schema = (SELECT DATABASE()) ORDER BY ordinal_position;"
         return await this.execSql(sql,[tablename]);
-    },
+    }
     /**
      * 分页查询表的信息
      * @param {string} tablename 查询的表名
@@ -154,7 +145,7 @@ module.exports = {
      * @param {object} options 选项
      * @returns {Promise<Object>}
      */
-    selectAllByTablePage: async function(tablename, pageIndex, pageSize, order, sort, sqlData, options) {
+    async selectAllByTablePage (tablename, pageIndex, pageSize, order, sort, sqlData, options) {
         options = _.assign({},{id:"pkid"}, options)
         let sqlOrder = ""
         let sql = ""
@@ -182,13 +173,13 @@ module.exports = {
             sql += ` ${sqlOrder}`
         }
         return await this.execSql(sql);
-    },
+    }
     /**
      * 开启事务：
      * @param {Connection} connection
      * @returns {Promise<boolean>} 返回true成功，false失败
      */
-    beginTransaction: function (connection){
+    beginTransaction (connection){
         return new Promise((resolve, reject) => {
             connection.beginTransaction(err => {
                 if (err) {
@@ -197,7 +188,7 @@ module.exports = {
                 resolve(true)
             })
         })
-    },
+    }
     /**
      * 执行sql语句
      * @param {Connection} connection 连接对象
@@ -205,7 +196,7 @@ module.exports = {
      * @param {object[]} params sql参数
      * @returns {Promise<unknown>}
      */
-    execSqlByConn: function (connection, sql, params) {
+    execSqlByConn (connection, sql, params) {
         const start = new Date()
         let sqlStr = this.getSqlStr(sql, params);
         return new Promise((resolve, reject) => {
@@ -221,13 +212,13 @@ module.exports = {
                 resolve(result)
             })
         })
-    },
+    }
     /**
      * 设置group_concat_max_len为10240的大小
      * @param {number} group_concat_max_len
      * @returns {Promise<Object[]>}
      */
-    setGroup_concat_max_len:async function (group_concat_max_len){
+    async setGroup_concat_max_len (group_concat_max_len){
         group_concat_max_len = group_concat_max_len || 10240
         let sql = `SET GLOBAL group_concat_max_len = ${group_concat_max_len};`
         //sql += `SET SESSION group_concat_max_len = ${group_concat_max_len};`
@@ -236,3 +227,5 @@ module.exports = {
         return await this.execSql(sql);
     }
 };
+module.exports = new mysqlHelper()
+module.exports.mysqlhelper = mysqlHelper

@@ -3,51 +3,36 @@
  * 必须在调试里添加下面的语句--tls-min-v1.0 否则无法连接数据库
  *
  * */
-const Connection = require('tedious').Connection;
-const Request = require('tedious').Request;
-const TYPES = require('tedious').TYPES;
+const {Connection,Request,TYPES} = require('tedious');
 const _ = require('lodash')
 const $log4js = require('./log4js')
 const $util = require('./util')
 const $convert = require('./convert')
 //参数的别名以A开头：例如@A1,@A2....
 const paramname = "A"
-module.exports = {
+
+class mssqlhelper {
+    constructor() {
+
+    }
     //连接
     //connection: null,
-    config:null,
+    _config=null
     /**
      * Create a new Pool instance.
      * @param {object|string} config Configuration or connection string for new MySQL connections
      * @return {Pool} A new MySQL pool
      * @public
      */
-    createPool: async function (config){
-        this.config = config
-        //let self = this;
-        // 使用连接池，提升性能
-        /*if(!(this.connection && !this.connection.closed && this.connection.state.name!="Final")) {
-            if (!config&&this.connection) {
-                config = this.connection.config
-            }
-            this.connection = new Connection(config);
-            this.connection.connect(function(err) {
-                if (err) {
-                    $log4js.sqlErrLogger("创建连接", "错误", err)
-                    console.log(err.message)
-                }else{
-                    console.log("mssql连接成功！")
-                }
-            });
-        }
-        return this.connection*/
-    },
+    async createPool (config){
+        this._config = config
+    }
     /**
      * 得到sql语句
      * @param {string} sql sql语句
      * @returns {string}
      */
-    getSqlStr:function(sql) {
+    getSqlStr (sql) {
         let i = 1
         let index = 0
         while (index!=-1) {
@@ -57,14 +42,14 @@ module.exports = {
             }
         }
         return sql
-    },
+    }
     /**
      * 得到getConnection
      * @returns {Promise<Connection>}
      */
-    getConn: function () {
+    getConn() {
         return new Promise((resolve, reject) => {
-            let connection = new Connection(this.config);
+            let connection = new Connection(this._config);
             connection.connect(function (err) {
                 if (err) {
                     $log4js.sqlErrLogger("创建连接", "错误", err)
@@ -75,12 +60,12 @@ module.exports = {
                 }
             });
         })
-    },
+    }
     /**
      *
      * @param {object[]} params sql参数
      */
-    setParams: function (request, params){
+    setParams (request, params){
         for (let i = 0; i < params.length; i++) {
             switch (typeof params[i]) {
                 case "number":
@@ -95,14 +80,14 @@ module.exports = {
                     break;
             }
         }
-    },
+    }
     /**
      * 执行sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<object[]>}
      */
-    execSql: async function (sql, params) {
+    async execSql (sql, params) {
         let result = 0
         params = params || []
         try {
@@ -118,14 +103,14 @@ module.exports = {
             throw err
         }
         return result;
-    },
+    }
     /**
      * 执行事务sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<object[]>}
      */
-    execSqlByTransaction: async function (sql, params) {
+    async execSqlByTransaction (sql, params=[]) {
         let result = 0
         params = params || []
         try {
@@ -141,14 +126,14 @@ module.exports = {
             throw err
         }
         return result;
-    },
+    }
     /**
      * 执行存储过程
      * @param {string} sql sql语句
      * @param {object[]} param sql参数
      * @returns {Promise<number>}
      */
-    execProcedure: async function (sql, params) {
+    async execProcedure (sql, params) {
         let result = 0
         params = params || []
         try {
@@ -164,7 +149,7 @@ module.exports = {
             throw err
         }
         return result;
-    },
+    }
     /**
      * 执行带事务的sql语句
      * @param {Connection} connection 连接对象
@@ -173,7 +158,7 @@ module.exports = {
      * @param pool
      * @returns {Promise<object>}
      */
-    execSqlTransactionByConn: async function (connection, sql, params) {
+    async execSqlTransactionByConn (connection, sql, params) {
         /**
          * 提交事务
          */
@@ -245,12 +230,12 @@ module.exports = {
             // Execute SQL statement
             connection.execSql(request);
         })
-    },
+    }
     /**
      * 得到所有表数据
      * @returns {Promise<object>}
      */
-    selectAllByTableName: async function(){
+    async selectAllByTableName(){
         let sql = `select a.name tablename, a.name tablecomment 
         from sysobjects a 
             LEFT JOIN sys.extended_properties b ON a.id = b.major_id 
@@ -258,13 +243,13 @@ module.exports = {
         where a.xtype in ('U','V') 
         order by a.xtype,a.name`
         return await this.execSql(sql);
-    },
+    }
     /**
      * 得到某个表的所有字段名称
      * @param {string} tablename 查询的表名
      * @returns {Promise<Object>}
      */
-    selectAllByTableFieldName: async function(tablename) {
+    async selectAllByTableFieldName (tablename) {
         let sql = `SELECT col.colorder AS id,
             col.name AS columnName,
             ISNULL( ep.[value], col.name ) AS columnComment,
@@ -294,7 +279,7 @@ module.exports = {
         WHERE obj.name = @A1
         ORDER BY col.colorder;`
         return await this.execSql(sql,[tablename]);
-    },
+    }
     /**
      * 分页查询表的信息
      * @param {string} tablename 查询的表名
@@ -306,7 +291,7 @@ module.exports = {
      * @param {object} options 选项
      * @returns {Promise<Object>}
      */
-    selectAllByTablePage: async function(tablename, pageIndex, pageSize, order, sort, sqlData, options) {
+    async selectAllByTablePage (tablename, pageIndex, pageSize, order, sort, sqlData, options={}) {
         options = _.assign({},{id:"pkid"}, options)
         //let sqlOrder = ""
         let sql = ""
@@ -334,7 +319,7 @@ module.exports = {
             (select * from ${tablename} where 1=1 ${sqlData}) a`
         }
         return await this.execSql(sql);
-    },
+    }
     /**
      * 执行sql语句
      * @param {Connection} connection 连接对象
@@ -342,7 +327,7 @@ module.exports = {
      * @param {object[]} params sql参数
      * @returns {Promise<object>}
      */
-    execSqlByConn: function (connection, sql, params) {
+    execSqlByConn (connection, sql, params) {
         const start = new Date()
         let self = this
         return new Promise((resolve, reject) => {
@@ -383,7 +368,7 @@ module.exports = {
             // Execute SQL statement
             connection.execSql(request);
         })
-    },
+    }
     //执行存储过程的相关函数=========================================================
     /**
      * 执行sql语句
@@ -392,7 +377,7 @@ module.exports = {
      * @param {object[]} params sql参数
      * @returns {Promise<object>}
      */
-    execProcedureByConn:async function (connection, ProcedureName, params) {
+    async execProcedureByConn (connection, ProcedureName, params) {
         /**
          * 得到存储过程参数名称
          * @param {Connection} connection 连接对象
@@ -596,5 +581,8 @@ module.exports = {
             // Execute SQL statement
             connection.callProcedure(request);
         })
-    },
+    }
 };
+
+module.exports = new mssqlhelper()
+module.exports.mssqlhelper = mssqlhelper

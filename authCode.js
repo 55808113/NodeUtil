@@ -1,8 +1,8 @@
-/**
- 认证码
- 例子：
- // 刷新验证码
- function refreshCode() {
+/*
+认证码
+例子：
+// 刷新验证码
+function refreshCode() {
     //获取当前的时间作为参数，无具体意义
     var timenow = new Date().getTime();
     $.ajax({
@@ -16,83 +16,54 @@
         }
     });
 }
- $("#img_code").click(function () {
+$("#img_code").click(function () {
     refreshCode();
 })
  */
-const canvas = require('canvas')
-const $util = require('./util')
-const $convert = require('./convert')
+//生成svg图片的类
+const svgCaptcha = require('svg-captcha')
+
 module.exports = {
     /**
      * 得到认证码
      * @param ctx
-     * @param {int} width 认证码宽度 默认100
-     * @param {int} height 认证码高度 默认30
+     * @param {int} width 认证码宽度 默认60
+     * @param {int} height 认证码高度 默认25
      */
-    getCode: function (ctx, width = 100, height = 30) {
-        let defalut = {
-            width: $convert.getNumber(width), //认证码的宽度
-            height: $convert.getNumber(height), // 认证码的高度
-            bgColor_min: 180, //背景颜色最小值
-            bgColor_max: 250, //背景颜色最大值
-            fontColor_min: 50, //文字颜色最小值
-            fontColor_max: 160, //文字颜色最大值
-            font: 'bold 20px arial', //文字字体
-            fontSize: 10, //文字大小
-            trans: {c: [-0.108, 0.108], b: [-0.05, 0.05]},
-            str: 'abcdefghjkmnpqrstuvwxyz23456789',
-            length: 4, //个数
-            noiseLine: 4, //干扰线数
-            noisePoint: 50 //干扰点数
+    getCode: function (ctx, width = 60, height = 25) {
+        let outputBuffer;
+        // 验证码，对了有两个属性，text是字符，data是svg代码
+        let code = svgCaptcha.create({
+            // 翻转颜色
+            inverse: false,
+            // 验证码字符中排除 0o1i
+            //ignoreChars: '0o1il',
+            //验证码字符
+            charPreset: 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghjkmnopqrstuvwxyz23456789',
+            // 字体大小
+            fontSize: 25,
+            // 噪声线条数
+            noise: 0,
+            // 宽度
+            width: width,
+            // 高度
+            height: height
+        });
+        // 保存到session,忽略大小写
+        ctx.session.randomcode = code.text.toLowerCase();
+        let ieVerison = ctx.req.headers["user-agent"];
+        if (ieVerison.indexOf("Mozilla/4.0") == -1 && ieVerison.indexOf("Mozilla/3.0") == -1 && ieVerison.indexOf("Mozilla/2.0") == -1) {
+            ctx.set('Content-Type', 'image/svg+xml');
+            outputBuffer = String(code.data);
+        } else {
+            ctx.set('Content-Type', 'image/png');
+            //outputBuffer = svg2png.sync(code.data, { width: width, height: height });
         }
-
-        let canva = canvas.createCanvas(defalut.width, defalut.height);
-        let ctx2d = canva.getContext('2d');
-        // ctx.textBaseline = 'bottom';
-        //** 绘制背景色 **//        
-        ctx2d.fillStyle = $util.randomColor(defalut.bgColor_min, defalut.bgColor_max);
-        ctx2d.fillRect(0, 0, defalut.width, defalut.height);
-        let code = "";
-
-        //** 绘制文字 **//
-
-        let dist = Math.floor(defalut.width / (defalut.length) - defalut.fontSize)
-        let start = Math.floor(dist / 2)
-        for (var i = 0; i < defalut.length; i++) {
-            let txt = defalut.str[$util.randomNum(0, defalut.str.length)];
-            code += txt;
-            ctx2d.font = defalut.font;
-            ctx2d.fillStyle = $util.randomColor(defalut.fontColor_min, defalut.fontColor_max);
-            ctx2d.fillText(txt, start, defalut.height - defalut.fontSize, defalut.fontSize);
-            ctx2d.fillRect();
-            let c = $util.getRandom(defalut.trans['c'][0], defalut.trans['c'][1]);
-            let b = $util.getRandom(defalut.trans['b'][0], defalut.trans['b'][1]);
-            ctx2d.transform(1, b, c, 1, 0, 0);
-            start += dist + defalut.fontSize;
-        }
-
-        //*** 绘制干扰线 ***//
-        for (var i = 0; i < defalut.noiseLine; i++) {
-            ctx2d.strokeStyle = $util.randomColor(40, 180);
-            ctx2d.beginPath();
-            ctx2d.moveTo($util.randomNum(0, defalut.width), $util.randomNum(0, defalut.height));
-            ctx2d.lineTo($util.randomNum(0, defalut.width), $util.randomNum(0, defalut.height));
-            ctx2d.stroke();
-        }
-        // ** 绘制干扰点 ** //
-        for (var i = 0; i < defalut.noisePoint; i++) {
-            ctx2d.fillStyle = $util.randomColor(0, 255);
-            ctx2d.beginPath();
-            ctx2d.arc($util.randomNum(0, defalut.width), $util.randomNum(0, defalut.height), 1, 0, 2 * Math.PI);
-            ctx2d.fill();
-        }
-        //result.code = code;
-        // 保存到session 用来验证
-        ctx.session.randomcode = code;
+        // 返回数据直接放入页面元素展示即可
         ctx.body = {
             statusCode: 500,
-            data: canva.toDataURL()
+            data: outputBuffer
         };
+        /*ctx.body = outputBuffer;*/
     }
 };
