@@ -142,6 +142,8 @@ module.exports = {
         let rows = await self.client.hmget(key, fields)
         if (rows != null) {
             for (let row of rows) {
+                //当没有找到数据会返回null。要把null去掉
+                if (row==null) continue
                 try {
                     result.push(JSON.parse(row))
                 } catch (error) {
