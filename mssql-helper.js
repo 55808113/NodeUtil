@@ -11,6 +11,10 @@ const $convert = require('./convert')
 //参数的别名以A开头：例如@A1,@A2....
 const paramname = "A"
 
+/**
+ * mssql数据库相关函数
+ * 必须在调试里添加下面的语句--tls-min-v1.0 否则无法连接数据库
+ */
 class mssqlhelper {
     constructor() {
 
@@ -19,10 +23,9 @@ class mssqlhelper {
     //connection: null,
     _config=null
     /**
-     * Create a new Pool instance.
-     * @param {object|string} config Configuration or connection string for new MySQL connections
+     * 创建一个连接池
+     * @param {object} config 连接的配置对象
      * @return {Pool} A new MySQL pool
-     * @public
      */
     async createPool (config){
         this._config = config
@@ -62,10 +65,10 @@ class mssqlhelper {
         })
     }
     /**
-     *
-     * @param {object[]} params sql参数
+     * 根据类型设置存储过程参数
+     * @param {object[]} params sql参数数组
      */
-    setParams (request, params){
+    _setParams (request, params){
         for (let i = 0; i < params.length; i++) {
             switch (typeof params[i]) {
                 case "number":
@@ -86,8 +89,10 @@ class mssqlhelper {
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<object[]>}
+     * @example
+     * await mssqlhelper.execSql("",[param.id])
      */
-    async execSql (sql, params) {
+    async execSql (sql, params= []) {
         let result = 0
         params = params || []
         try {
@@ -155,12 +160,12 @@ class mssqlhelper {
      * @param {Connection} connection 连接对象
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
-     * @param pool
      * @returns {Promise<object>}
      */
     async execSqlTransactionByConn (connection, sql, params) {
         /**
          * 提交事务
+         * @private
          */
         function commitTransaction() {
             connection.commitTransaction((err) => {
@@ -175,6 +180,7 @@ class mssqlhelper {
         /**
          * 回滚事务
          * @param err
+         * @private
          */
         function rollbackTransaction(err) {
             console.log('transaction err: ', err);
@@ -187,6 +193,7 @@ class mssqlhelper {
         }
         /**
          * 开始事务
+         * @private
          */
         function beginTransaction() {
             connection.beginTransaction((err) => {
@@ -224,7 +231,7 @@ class mssqlhelper {
                 resolve(result)
             });
             if (params) {
-                self.setParams(request, params)
+                self._setParams(request, params)
             }
             //connection.callProcedure()
             // Execute SQL statement
@@ -350,7 +357,7 @@ class mssqlhelper {
                 resolve(result)
             });
             if (params) {
-                self.setParams(request, params)
+                self._setParams(request, params)
             }
             request.on('row', function(columns) {
                 //当是返回的集合时设置为数组
@@ -386,9 +393,7 @@ class mssqlhelper {
          * @private
          */
         async function _getProcedureParameters(connection, ProcedureName){
-            let sql = `
-        SELECT
-            sp.object_id AS FunctionId,
+            let sql = `SELECT sp.object_id AS FunctionId,
             sp.name AS FunctionName,
             ( CASE WHEN param.is_output = 1 THEN 'OUTPUT' ELSE 'IN' END ) AS ParamType,
             ISNULL( param.name, '' ) AS ParamName,
@@ -404,24 +409,24 @@ class mssqlhelper {
                 ) AS [Length],
             ISNULL( parameter_id, 0 ) AS SortId,
             '' AS ParamReamrk
-        FROM
-        sys.objects AS sp
-        INNER JOIN sys.schemas b ON sp.schema_id = b.schema_id
-        LEFT OUTER JOIN sys.all_parameters AS param ON param.object_id = sp.object_id
-        LEFT OUTER JOIN sys.types AS usrt ON usrt.user_type_id = param.user_type_id
-        LEFT OUTER JOIN sys.types AS baset ON ( baset.user_type_id = param.system_type_id AND baset.user_type_id = baset.system_type_id )
-        OR (
-            ( baset.system_type_id = param.system_type_id )
-            AND ( baset.user_type_id = param.user_type_id )
-            AND ( baset.is_user_defined = 0 )
-            AND ( baset.is_assembly_type = 1 )
-        )
-        LEFT OUTER JOIN sys.extended_properties E ON sp.object_id = E.major_id
-        WHERE sp.object_id = OBJECT_ID( @A1)
-        AND sp.type IN ( 'FN', 'IF', 'TF', 'P' )
-        AND ISNULL( sp.is_ms_shipped, 0 ) = 0
-        AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
-        ORDER BY sp.name , param.parameter_id ASC;`
+            FROM
+            sys.objects AS sp
+            INNER JOIN sys.schemas b ON sp.schema_id = b.schema_id
+            LEFT OUTER JOIN sys.all_parameters AS param ON param.object_id = sp.object_id
+            LEFT OUTER JOIN sys.types AS usrt ON usrt.user_type_id = param.user_type_id
+            LEFT OUTER JOIN sys.types AS baset ON ( baset.user_type_id = param.system_type_id AND baset.user_type_id = baset.system_type_id )
+            OR (
+                ( baset.system_type_id = param.system_type_id )
+                AND ( baset.user_type_id = param.user_type_id )
+                AND ( baset.is_user_defined = 0 )
+                AND ( baset.is_assembly_type = 1 )
+            )
+            LEFT OUTER JOIN sys.extended_properties E ON sp.object_id = E.major_id
+            WHERE sp.object_id = OBJECT_ID( @A1)
+            AND sp.type IN ( 'FN', 'IF', 'TF', 'P' )
+            AND ISNULL( sp.is_ms_shipped, 0 ) = 0
+            AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
+            ORDER BY sp.name , param.parameter_id ASC;`
             return await self.execSqlByConn(connection,sql,[ProcedureName])
         }
         /**

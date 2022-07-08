@@ -88,11 +88,13 @@ module.exports = {
         /**
          * 文件目录批量修改大小，线程的。
          * @param params
+         * @example
          * {
          *     src:"",
          *     width:100, //如果不写就代表width根据height适应
          *     height:100 //如果不写就代表height根据width适应
          * }
+         * @private
          */
         function resizeByDir(params) {
             //多线程的任务，非常的好用。方便进行大量数据处理时使用。
@@ -117,14 +119,16 @@ module.exports = {
 
         /**
          *
-         * @param params
+         * @param {object} params
+         * @example
          * {
          *      src: "",
-                dest: "",
-                width: 100,
-                height: 100
+         *      dest: "",
+         *      width: 100,
+         *      height: 100
          * }
-         * @param callback
+         * @param {function} callback
+         * @private
          */
         function resizeimg(params, callback) {
             /*var imoptions = {

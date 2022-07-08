@@ -1,6 +1,4 @@
-/**
- 文件处理的函数
- */
+
 const path = require('path')
 const fs = require('fs')
 const _ = require('lodash')
@@ -9,21 +7,24 @@ const compressing = require('compressing')
 const http = require('http')
 const $util = require('./util')
 const $crypto = require('./crypto')
-module.exports = {
+/**
+ 文件处理的函数
+ */
+class file {
     /**
      * 得到小写的文件扩展名，去掉“。”。
      * @param {string} path 文件路径
      * @returns {string} 返回小写的文件扩展名例如：jpg,gif。
      */
-    extname: function (filename){
+    extname (filename){
         return path.extname(filename).replace('.', '').toLowerCase();
-    },
+    }
     /**
      * 递归创建目录
      * @param {string} dirname 目录路径
      * @returns {boolean}
      */
-    createFolder: function (dirname) {
+    createFolder(dirname) {
         if (fs.existsSync(dirname)) {
             return true;
         } else {
@@ -32,13 +33,13 @@ module.exports = {
                 return true;
             }
         }
-    },
+    }
     /**
      * 删除文件
      * @param {string} filepath 文件路径
      * @returns {Promise<unknown>}
      */
-    deleteFile: function (filepath) {
+    deleteFile (filepath) {
         return new Promise(async (resolve, reject) => {
             fs.unlink(filepath, (err) => {
                 if (err) {
@@ -48,7 +49,7 @@ module.exports = {
                 }
             })
         })
-    },
+    }
     /**
      * 读取文件
      * @param {string} filepath 文件路径
@@ -61,7 +62,7 @@ module.exports = {
         } else {
             throw new Error(filepath + "文件不存在")
         }
-    },
+    }
     /**
      * 写文件
      * @param {string} filepath 文件路径
@@ -69,7 +70,7 @@ module.exports = {
      * @param {string} encode 编码类型：默认为utf-8
      * @returns {Promise<unknown>}
      */
-    writeFile: function (filepath, data, encode = 'utf-8') {
+    writeFile (filepath, data, encode = 'utf-8') {
         return new Promise((resolve, reject) => {
             fs.writeFile(filepath, data, encode, (err) => {
                 if (err) {
@@ -79,13 +80,13 @@ module.exports = {
                 }
             })
         })
-    },
+    }
     /**
      * 删除文件夹
      * @param {string} filepath 文件路径
      * @returns {Promise<unknown>}
      */
-    deleteFolder: function (filepath) {
+    deleteFolder (filepath) {
         let self = this;
         return new Promise(async (resolve, reject) => {
             let files = [];
@@ -103,13 +104,13 @@ module.exports = {
             }
             resolve()
         })
-    },
+    }
     /**
      * 递归查询目录下的所有文件
      * @param {string} filepath 文件路径
      * @param {string} reg 查询的正规表达式：/^.*\.js$/
      */
-    findFile: function (filepath, reg = "") {
+    findFile (filepath, reg = "") {
         let listDir = function (dirpath) {
             let fileList = fs.readdirSync(dirpath);
             for (let i = 0; i < fileList.length; i++) {
@@ -130,27 +131,27 @@ module.exports = {
         let resultFiles = []
         listDir(filepath);
         return resultFiles
-    },
+    }
     /**
      * 得到当前目录下所有目录列表
      * @param {string} filepath 目录路径
      */
-    getAllDir: function (filepath){
+    getAllDir (filepath){
         return this.getAllDirFile(filepath,1)
-    },
+    }
     /**
      * 得到当前目录下所有文件列表
      * @param {string} filepath 目录路径
      */
-    getAllFile: function (filepath){
+    getAllFile (filepath){
         return this.getAllDirFile(filepath,2)
-    },
+    }
     /**
      * 得到当前目录下所有文件的列表（包括目录和文件）
      * @param {string} filepath 目录路径
      * @param {integer} type 过滤类型。type=0：所有文件。type=1：返回目录，type=2：返回文件
      */
-    getAllDirFile: function (filepath, type = 0) {
+    getAllDirFile (filepath, type = 0) {
         let filelist = [];
         let result = [];
         if (fs.existsSync(filepath)) {
@@ -186,14 +187,14 @@ module.exports = {
                 break;
         }
         return result
-    },
+    }
     /**
      * 重命名或者移动文件
      * @param {string} filepath 原路径
      * @param {string} newfilepath 新的路径
      * @returns {Promise<unknown>}
      */
-    moveFile: function (filepath, newfilepath) {
+    moveFile (filepath, newfilepath) {
         return new Promise(async (resolve, reject) => {
             if (fs.existsSync(filepath)) {
                 this.createFolder(path.dirname(newfilepath))
@@ -218,26 +219,26 @@ module.exports = {
                 });
             }
         })
-    },
+    }
     /**
      * 复制文件
      * @param fromPath
      * @param toPath
      */
-    copyFile: function (fromPath, toPath) {
+    copyFile (fromPath, toPath) {
         // 创建读取流
         let readable = fs.createReadStream(fromPath);
         // 创建写入流
         let writable = fs.createWriteStream(toPath);
         // 通过管道来传输流
         readable.pipe(writable);
-    },
+    }
     /**
      * 文件夹复制
      * @param {string} fromPath 源文件路径
      * @param {string} toPath 目标文件路径
      */
-    copyForder: function (fromPath, toPath) {
+    copyForder (fromPath, toPath) {
         /*
          * 复制目录中的所有文件包括子目录
          * @param{ String } 需要复制的目录
@@ -294,52 +295,52 @@ module.exports = {
 
         // 复制目录
         exists(fromPath, toPath, copy);
-    },
+    }
     /**
      * 把文件转换成Base64编码
      * @param {string} filepath 文件路径
      * @returns {*} Base64编码
      */
-    fileToBase64: function (filepath) {
+    fileToBase64 (filepath) {
         let data = fs.readFileSync(filepath);
         return Buffer.from(data, 'base64');
-    },
+    }
     /**
      * 判断是否为目录
      * @param filepath
      */
-    isDirectory:function (filepath){
+    isDirectory (filepath){
         let info = fs.statSync(filepath)
         if (info && !info.isDirectory()) {
             return false;
         }
         return true;
-    },
+    }
     /**
      * 判断是否为文件
      * @param filepath
      */
-    isFile:function (filepath){
+    isFile (filepath){
         return !this.isDirectory(filepath)
-    },
+    }
     /**
      * 得到随机的UUID的文件名
      * @param {string} filename 文件名
      * @returns {string} 随机文件名
      * @constructor
      */
-    UUIDFileName: function (filename) {
+    UUIDFileName (filename) {
         return $util.UUID() + path.extname(filename).toLowerCase();
-    },
+    }
     /**
      * 得到MD5的文件名
      * @param {string} filename 文件名
      * @returns {string} 随机文件名
      * @constructor
      */
-    MD5FileName: function (filepath) {
+    MD5FileName (filepath) {
         return $crypto.MD5(filepath) + path.extname(filepath).toLowerCase()
-    },
+    }
     /**
      * 下载文件
      * @param ctx
@@ -348,7 +349,7 @@ module.exports = {
      * @param {boolean} cache 是否缓存。默认为真
      * @returns {Promise<void>}
      */
-    download: async function (ctx, filepath, filename, cache = true) {
+    async download (ctx, filepath, filename, cache = true) {
         if (fs.existsSync(filepath)) {
             if (filename) {
                 ctx.attachment(filename);
@@ -363,13 +364,13 @@ module.exports = {
             let err = filepath + '所下载的文件不存在！'
             throw new Error(err)
         }
-    },
+    }
     /**
      * 流的方式下载文件。像视频这样的用流的方式可以拖拽视频显示
      * @param {string} filepath 文件的本地路径
      * @returns {Promise<void>}
      */
-    downloadStream: async function (ctx, filepath) {
+    async downloadStream (ctx, filepath) {
         let info = fs.statSync(filepath)
         let total = info.size;
         let range = ctx.request.headers.range;
@@ -389,13 +390,13 @@ module.exports = {
 
         let stream = fs.createReadStream(filepath, {start: start, end: end});
         ctx.body = stream
-    },
+    }
     /**
      * 从网上下载文件
      * @param url {string} 网上文件的路径
      * @param filepath {string} 文件保存的路径
      */
-    urlDownload: async function (url, filepath) {
+    async urlDownload (url, filepath) {
         return new Promise((resolve, reject) => {
             this.createFolder(path.dirname(filepath))
             //console.log(`  * Downloading from: ${url}`)
@@ -428,13 +429,13 @@ module.exports = {
                 reject(e);
             });
         })
-    },
+    }
     /**
      * 下载文件流
      * @param {string} url 网站路径
      * @returns {Promise<unknown>}
      */
-    urlDownloadStream: async function (url) {
+    async urlDownloadStream (url) {
         return new Promise((resolve, reject) => {
             http.get(url, (res) => {
                 /*response.pipe(file)
@@ -477,24 +478,25 @@ module.exports = {
                 reject(e);
             });
         })
-    },
+    }
     /**
      * 压缩文件 例子await compressing.zip.compressDir('d:/abc.doc','d:/nodejs-compressing-demo.zip')
      * @param {string} sourcePath 源路径
      * @param {string} destZipPath ZIP文件目标路径
      * @returns {Promise<void>}
      */
-    zipfile: async function (sourcePath, destZipPath) {
+    async zipfile (sourcePath, destZipPath) {
         await compressing.zip.compressDir(sourcePath, destZipPath)
-    },
+    }
     /**
      * 解压文件 例子await compressing.zip.uncompress('d:/nodejs-compressing-demo.zip', 'd:/nodejs-compressing-demo')
      * @param {string} sourceZipPath  ZIP文件目标路径
      * @param {string} destDir 目标目录
      * @returns {Promise<void>}
      */
-    unzipfile: async function (sourceZipPath, destDir) {
+    async unzipfile (sourceZipPath, destDir) {
         await compressing.zip.uncompress(sourceType, destType)
-    },
-
+    }
 };
+
+module.exports = new file()

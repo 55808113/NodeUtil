@@ -1,30 +1,32 @@
-/*
-字符串转换函数
- */
+
 const dayjs = require('dayjs');
 const _ = require('lodash')
 const $util = require('./util')
-module.exports = {
+
+/**
+ 相关转换函数
+ */
+class convert {
     /**
      * 向前台返回JSON方法的简单封装
      * @param {boolean} val 值
-     * @param defaultvalue 默认值
+     * @param {boolean} defaultvalue 默认值
      * @returns {boolean}
      */
-    getBool: function (val, defaultvalue = false) {
+    getBool (val, defaultvalue = false) {
         if ($util.isEmpty(val))
             return defaultvalue
         else if (val === true || _.lowerCase(val) === "true" || val === 1 || val === "1")
             return true
         else
             return false
-    },
+    }
     /**
      * 得到对象
      * @param {object} val 值
-     * @returns {string|null|*}
+     * @returns {string|number|null|*}
      */
-    getObject: function (val) {
+    getObject (val) {
         //添加判断val instanceof Date因为_.isEmpty(val)这个函数无法判断日期
         if ($util.isEmpty(val)) {
             if (typeof (val) == "string") {
@@ -36,89 +38,89 @@ module.exports = {
             }
         } else
             return val;
-    },
+    }
     /**
      * 得到字符类型
      * @param {string} val 值
      * @param {string} defaultvalue 默认值
      * @returns {string|*}
      */
-    getString: function (val, defaultvalue = "") {
+    getString (val, defaultvalue = "") {
         if ($util.isEmpty(val))
             return defaultvalue;
         else
             return val;
-    },
+    }
     /**
      * 得到日期类型
      * @param {Date} val 值
      * @param {Date} defaultvalue 默认值
-     * @returns {null|*}
+     * @returns {Date|null|*}
      */
-    getDate: function (val, defaultvalue = null) {
+    getDate (val, defaultvalue = null) {
         if (!dayjs(val).isValid())
             return defaultvalue;
         else{
             return new Date(val);
         }
-    },
+    }
     /**
      * 得到数字。如果为空根据默认值返回
      * @param {number} val 值
      * @param {number} defaultvalue 默认值
      * @returns {number}
      */
-    getNumber: function (val, defaultvalue = 0) {
+    getNumber (val, defaultvalue = 0) {
         if ($util.isEmpty(val) || _.isNaN(Number(val)))
             return defaultvalue;
         else
             return Number(val);
 
-    },
+    }
     /**
      * 格式化日期加时间
      * @param {Date} val 值
      * @param {string} template 格式
      * @returns {string}
      */
-    getDateTimeString: function (val, template = "YYYY-MM-DD HH:mm:ss") {
+    getDateTimeString (val, template = "YYYY-MM-DD HH:mm:ss") {
         //千万不要修改为_.isEmpty(val)因为这个函数无法判断日期
         if (!_.isDate(val))
             return "";
         else
             return dayjs(val).format(template);
-    },
+    }
     /**
      * 格式化日期格式
      * @param {Date} val 值
      * @param {string} template
      * @returns {string}
      */
-    getDateString: function (val, template = "YYYY-MM-DD") {
+    getDateString (val, template = "YYYY-MM-DD") {
         //千万不要修改为_.isEmpty(val)因为这个函数无法判断日期
         return this.getDateTimeString(val, template);
-    },
+    }
     /**
      * 字符串转成数组
      * @param {string} str 数组字符串
-     * @param {string} sn 分割的字符串
+     * @param {string} [sn] 分割的字符串
      * @returns {*|Array|string[]} 返回的数组
      */
-    strToArray: function(str, sn = ',') {
+    strToArray (str, sn = ',') {
         let result = []
         if ($util.isNotEmpty(str)) {
             result = str.split(sn); // 在每个逗号(,)处进行分解。
         }
         return result
 
-    },
+    }
     /**
      * 数组转成字符串
      * @param {object[]|string} arr
-     * @param {string} sn
+     * @param {string} [sn]
      * @returns {string} 返回的字符串
      */
-    arrayToStr: function(arr, sn = ','){
+    arrayToStr (arr, sn = ','){
         let result = "";
         if (Array.isArray(arr)) {
             result = arr.join(sn)
@@ -126,14 +128,14 @@ module.exports = {
             result = arr
         }
         return result
-    },
+    }
     /**
      * 前台传过来的数组有时是字符串有时是数组。所以通过转换成统一的数组
      * 当选择一个时是string。多个时才是array类型
-     * @param arr
-     * @returns {*[]}
+     * @param {object|object[]} arr
+     * @returns {object[]}
      */
-    paramsToArr: function(arr){
+    paramsToArr (arr){
         let result = []
         if ($util.isNotEmpty(arr)) {
             if (_.isArray(arr)) {
@@ -147,13 +149,13 @@ module.exports = {
             }
         }
         return result
-    },
+    }
     /**
      * 字符串转json类型
-     * @param str 要转换的字符串
-     * @returns {any} 返回JSON对象
+     * @param {string} str 要转换的字符串
+     * @returns {JSON|null} 返回JSON对象
      */
-    strToJson: function (str) {
+    strToJson (str) {
         if (!$util.isEmpty(str) && str != 0) {
             try {
                 return JSON.parse(str);
@@ -162,7 +164,7 @@ module.exports = {
             }
         }
         return null;
-    },
+    }
     /**
      * json类型转字符串
      * @param {JSON} json json对象
@@ -172,23 +174,19 @@ module.exports = {
         if (!_.isEmpty(json)) {
             return JSON.stringify(json);
         }
-    },
+    }
     /**
      * 过滤html标签
      * @param {string} str 要过滤的html
-     * @returns {string|void|*} 过滤后的字符串
+     * @returns {string|*} 过滤后的字符串
      */
-    delhtmltags: function (str) {
+    delhtmltags (str) {
         if (!$util.isEmpty(str)) {
             return str.replace(/<[^>]+>/g, ''); // 去掉所有的html标记
         } else {
             return '';
         }
-    },
-    /**
-     * 等比取值
-     *
-     */
+    }
     /**
      * 等比取值
      * @param {number} value
@@ -196,17 +194,20 @@ module.exports = {
      * @param {number} fromHigh
      * @param {number} toLow
      * @param {number} toHigh
-     * @returns {*}
+     * @returns {number|*}
      */
-    map: function (value, fromLow, fromHigh, toLow, toHigh) {
+    map (value, fromLow, fromHigh, toLow, toHigh) {
         return (value - fromLow) * (toHigh - toLow) / (fromHigh - fromLow) + toLow;
-    },
+    }
     /**
      * 颜色16进制格式转换为RGB数组
      * @param {string} value 16进制格式的。例如#FFFFFF
      * @returns {array} 返回RGB数组
+     * @example
+     * let rgb = colorRgb("#FFFFFF")
+     * rgb //[255,255,255]
      */
-    colorRgb: function (value) {
+    colorRgb (value) {
         // 16进制颜色值的正则
         let reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
         // 把颜色值变成小写
@@ -229,13 +230,16 @@ module.exports = {
         } else {
             return null;
         }
-    },
+    }
     /**
      * 颜色RGB数组转换为16进制格式
      * @param {string} value RGB格式的。例如rgb(12,12,12)
      * @returns {string} 返回16进制格式
+     * @example
+     * let hex = colorHex("rgb(12,12,12)")
+     * hex //#FFFFFF
      */
-    colorHex: function (value) {
+    colorHex (value) {
         // RGB颜色值的正则
         let reg = /^(rgb|RGB)/;
         let color = value;
@@ -257,3 +261,5 @@ module.exports = {
         }
     }
 };
+
+module.exports = new convert()

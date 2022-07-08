@@ -1,12 +1,12 @@
-/**
- 常用的加密解密方法
- */
-const CryptoJS = require("crypto-js")
 
+const CryptoJS = require("crypto-js")
 const AESkey = "www.sunxdd.com"
 const AESvi = "abcdefg123456"
 //const MD5key = "www.sunxdd.com"
 const SHA256key = "www.sunxdd.com"
+/**
+ 常用的加密解密方法
+ */
 module.exports = {
     /**
      * MD5加密

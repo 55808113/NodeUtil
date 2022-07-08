@@ -26,9 +26,7 @@ const handlebars = require("handlebars")
 const htmlpdf = require('html-pdf')
 class pdf {
     options = {
-        /**
-         * 使用前需要设置一下phantomPath的路径。
-         */
+        //使用前需要设置一下phantomPath的路径。
         phantomPath:path.join(process.cwd(),"lib/phantomjs-2.1.1-window/bin/phantomjs.exe")
     }
     init(opts){

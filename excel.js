@@ -15,15 +15,15 @@ const $upload = require('./upload')
 const $file = require('./file')
 const $sqlhelper = require('./mysql-helper')
 
+/**
+ * 操作Excel相关函数
+ */
 class excel {
     constructor() {
 
     }
-    //////////////////////////////////EXCEL文件操作/////////////////////////////////////////
     options = {
-        /**
-         * 错误的文件目录
-         */
+        //错误的文件目录
         impFailpath: path.join(process.cwd(), '/upload/ImpErr')
     }
     init (opts){
@@ -445,9 +445,10 @@ class excel {
     }
     /**
      * 导入excel文件
-     * @param ctx
-     * @param {sql: string, onUploadFileSuccess: function,onSetParams:function } opts  sql语句
-     * @returns {Promise<{fail: number, success: number, failfilename: string}>}
+     * @param {object} ctx
+     * @param {{sql: string, onUploadFileSuccess: function, onSetParams:function}} opts  sql语句
+     * @returns {Promise<{{fail: number, success: number, failfilename: string}}>}
+     * @example
      * {
      *   fail: number, //错误的个数
      *   success: number, //成功的个数

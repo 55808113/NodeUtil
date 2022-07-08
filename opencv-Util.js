@@ -38,8 +38,8 @@ module.exports = {
     },
     /**
      * 人脸识别
-     * @param {string,buffer} image 图片文件流或者文件路径
-     * @returns {Promise<unknown>} json脸数据[{x = 0, y = 0, width = 100, height = 100}]
+     * @param {string|buffer} image 图片文件流或者文件路径
+     * @returns {Promise<object>} json脸数据[{x = 0, y = 0, width = 100, height = 100}]
      */
     faceDetect: function (image) {
         return new Promise((resolve, reject) => {
@@ -73,7 +73,7 @@ module.exports = {
     },
     /**
      * 人体识别
-     * @param {string,buffer} image 图片文件流或者文件路径
+     * @param {string|buffer} image 图片文件流或者文件路径
      * @returns {Promise<unknown>}
      */
     bodyDetect: function (image) {
@@ -113,7 +113,7 @@ module.exports = {
     },
     /**
      * 颜色识别
-     * @param {string,buffer} image 图片流或者图片路径
+     * @param {string|buffer} image 图片流或者图片路径
      * @param {object} option 选项
      *  {array [B,G,R]} lowerb 例如：黄色[27, 160, 215]// (B)lue, (G)reen, (R)ed 颜色范围下边界(颜色深的);
      *  {array [B,G,R]} upperb 例如：黄色[83, 255, 255]// (B)lue, (G)reen, (R)ed 颜色范围上边界(颜色浅的);
@@ -168,7 +168,7 @@ module.exports = {
     },
     /**
      * 汽车导航
-     * @param {string,buffer} image 图片
+     * @param {string|buffer} image 图片
      * @param {object} option 参数
      */
     carNavigation: function (image, option) {

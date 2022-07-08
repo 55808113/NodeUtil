@@ -28,19 +28,19 @@ module.exports = {
     },
     /**
      * 创建comboTree对象
-     * @param data row数据集合
-     * @param fieldOpt 对象数据集的字段名称
+     * @param {object[]}  data row数据集合
+     * @param {object} fieldOpt 对象数据集的字段名称
+     * @example
      * {
      *     id:"pkid", //主键
-            text:"text", //显示的文字
-            title:"title", //提示
-            parentid:"parentid", //父节点id
-            attributes:{url:"url",dm:"dm"}, //附加的属性字段名称
-            parentIconCls:null, //父节点图标
-            childIconCls:null, //子节点图标
-
+     *     text:"text", //显示的文字
+     *     title:"title", //提示
+     *     parentid:"parentid", //父节点id
+     *     attributes:{url:"url",dm:"dm"}, //附加的属性字段名称
+     *     parentIconCls:null, //父节点图标
+     *     childIconCls:null, //子节点图标
      * }
-     * @param treeobjList tree数组对象,当需要自己添加一些节点时使用
+     * @param {object[]} treeobjList tree数组对象,当需要自己添加一些节点时使用
      */
     createTree:function(data,fieldOpt,treeobjList=[]) {
         let tnode = null;

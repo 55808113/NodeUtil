@@ -5,10 +5,13 @@
 const oracle = require('oracledb')
 const $log4js = require('./log4js')
 
+/**
+ * oracle数据库相关函数
+ */
 class oraclehelper {
     /**
      * resultSet记录集对象转换成json数组格式
-     * @param resultSet
+     * @param {object} resultSet
      * @private
      */
     async _resultSetToJson (resultSet){
@@ -28,9 +31,9 @@ class oraclehelper {
         return result;
     }
     /**
-     * Create a new Pool instance.
-     * @param {object|string} config Configuration or connection string for new MySQL connections
-     * @return {Pool} A new MySQL pool
+     * 创建连接池
+     * @param {object|string} config 连接的配置信息
+     * @return {Pool} 连接池对象
      * @public
      */
     createPool (config,callback){
@@ -52,8 +55,9 @@ class oraclehelper {
     /**
      * 拼写sql存储过程语句
      * @param {string} sql sql语句
-     * @param {object[]} params 参数数组
+     * @param {object[]} [params] 参数数组
      * @returns {*}
+     * @private
      */
     getSqlStr (sql, params) {
         let result = "";
@@ -76,7 +80,7 @@ class oraclehelper {
     /**
      * 得到getConnection
      * @param {string} poolAlias 连接池别名
-     * @returns {Promise<unknown>}
+     * @returns {Promise<connection>}
      */
     async getConn (poolAlias) {
         try{
@@ -96,8 +100,8 @@ class oraclehelper {
      * 存储过程查询需要的
      * @param {string} poolAlias
      * @param {string} sql
-     * @param {object[]} params
-     * @returns {Promise<*[]>}
+     * @param {object[]} [params]
+     * @returns {Promise<object[]>}
      */
     async querySqlPool (poolAlias, sql, params) {
         let result = [];
@@ -139,7 +143,7 @@ class oraclehelper {
      * 执行sql语句，自己传pool对象
      * @param {string} poolAlias 连接池
      * @param {string} sql sql语句
-     * @param {object[]} params sql参数
+     * @param {object[]} [params] sql参数
      * @returns {Promise<number>}
      */
     async execSqlPool (poolAlias, sql, params) {
@@ -162,7 +166,7 @@ class oraclehelper {
      * 执行带事务的sql语句
      * @param {string} poolAlias 连接池对象
      * @param {string} sql sql语句
-     * @param {object[]} params sql参数
+     * @param {object[]} [params] sql参数
      * @returns {Promise<number>}
      */
     async execSqlByTransactionPool (poolAlias, sql, params) {
@@ -188,7 +192,7 @@ class oraclehelper {
      * 执行sql语句
      * @param {Connection} connection 连接对象
      * @param {string} sql sql语句
-     * @param {object[]} params sql参数
+     * @param {object[]} [params] sql参数
      * @returns {Promise<unknown>}
      */
     async execSqlByConn (connection, sql, params) {
@@ -199,7 +203,7 @@ class oraclehelper {
     /**
      * 执行sql语句
      * @param {string} sql sql语句
-     * @param {object[]} params sql参数
+     * @param {object[]} [params] sql参数
      * @returns {Promise<number>}
      */
     async execSql (sql, params) {
@@ -208,11 +212,11 @@ class oraclehelper {
     /**
      * 返回记录集的
      * @param {string} sql sql语句
-     * @param {object[]} params sql参数
-     * @returns {Promise<*[]>}
+     * @param {object[]} [params] sql参数
+     * @returns {Promise<object[]>}
      */
     async querySql (sql, params) {
-        return await this.querySqlPool(null, sql, params);
+        return await this.querySqlPool("", sql, params);
     }
     /**
      * 执行带事务的sql语句
@@ -221,7 +225,7 @@ class oraclehelper {
      * @returns {Promise<number>}
      */
     async execSqlByTransaction (sql, params) {
-        return await this.execSqlByTransactionPool(null, sql, params);
+        return await this.execSqlByTransactionPool("", sql, params);
     }
 };
 

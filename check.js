@@ -1,23 +1,24 @@
-/**
- * 判断的语句
- 例子：
- */
+
 const $command = require('./command')
-module.exports = {
+/**
+ * 判断的函数
+ */
+class check {
     /**
      * 判断字符是否为函数
-     * @param functionToCheck
+     * @param {function} functionToCheck
      * @returns {boolean}
      */
-    checkIsFunction: function (functionToCheck) {
+    checkIsFunction(functionToCheck) {
         let getType = {};
         return functionToCheck && getType.toString.call(functionToCheck) === '[object Function]';
-    },
+    }
     /**
      * 判断身份证号码
      * @param {Object} num
+     * @returns {boolean|string}
      */
-    checkIsIDCardNum: function (num){
+    checkIsIDCardNum (num){
         num = num.toUpperCase();
         //身份证号码为15位或者18位，15位时全为数字，18位前17位为数字，最后一位是校验位，可能为数字或字符X。
         if (!(/(^\d{15}$)|(^\d{17}([0-9]|X)$)/.test(num))) {
@@ -82,12 +83,12 @@ module.exports = {
             }
         }
         return '18位身份证的校验码不正确！';
-    },
+    }
     /**
      * 判断系统是不是树莓派
      * @returns {*|boolean}
      */
-    checkIsRaspberry: function () {
+    checkIsRaspberry () {
         const PI_MODEL_NO = [
             'BCM2708',
             'BCM2709',
@@ -103,12 +104,12 @@ module.exports = {
         }
         const hardware = getValue(cpuinfo, 'hardware');
         return (hardware && PI_MODEL_NO.indexOf(hardware) > -1);
-    },
+    }
     /**
      * 检查是否为Raspbian系统
      * @returns {*|boolean}
      */
-    checkIsRaspbian: function () {
+    checkIsRaspbian () {
         let osrelease = [];
         try {
             osrelease = fs.readFileSync('/etc/os-release', {encoding: 'utf8'}).split('\n');
@@ -117,11 +118,11 @@ module.exports = {
         }
         const id = $command.getValue(osrelease, 'id');
         return (id && id.indexOf('raspbian') > -1);
-    },
+    }
     /**
      * 检验浏览器是否为PC
      */
-    checkIsPC: function (ctx){
+    checkIsPC (ctx){
         if (!ctx.request.headers["user-agent"]) return true;
         var deviceAgent = ctx.request.headers["user-agent"].toLowerCase();
         var agentID = deviceAgent.match(/(iphone|ipod|ipad|android)/);
@@ -134,3 +135,5 @@ module.exports = {
         }
     }
 }
+
+module.exports = new check()

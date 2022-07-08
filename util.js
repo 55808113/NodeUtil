@@ -104,6 +104,7 @@ module.exports = {
      * @param ctx
      * @param rows 记录集
      * @param fieldOpt 记录的字段名称
+     * @example
      * {
      *     id:"pkid", //主键
      *     parentid:"parentid", //父节点id

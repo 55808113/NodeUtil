@@ -1,13 +1,8 @@
-/**
- 百度ai
- 例子：
- // 刷新验证码
 
- */
 const AipFaceClient = require("baidu-aip-sdk").face
 const AipBodyAnalysisClient = require("baidu-aip-sdk").bodyanalysis;
 const AipSpeechClient = require("baidu-aip-sdk").speech;
-const $util = require('./util')
+
 // 设置APPID/AK/SK
 const APP_ID = "xxxxxxxx";
 const API_KEY = "xxxxxxxxxxxxxxxx";

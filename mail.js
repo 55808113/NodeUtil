@@ -4,22 +4,22 @@
 const _ = require('lodash')
 const nodemailer = require('nodemailer');
 
-module.exports = {
-    transporter: null,
-    options:{
+class mail {
+    _transporter = null
+    options = {
         service:'QQ',
         user:'55808113@qq.com',
         pass:'xxxxxxxxx' //邮箱第三方登录授权码
-    },
-    init: function (opts){
+    }
+    init (opts){
         _.assign(this.options,opts)
-    },
+    }
     /**
      * 初始化
      */
-    _createTransporter: function () {
+    _createTransporter () {
         let opts = this.options
-        this.transporter = nodemailer.createTransport({
+        this._transporter = nodemailer.createTransport({
             service: opts.service,
             auth: {
                 user: opts.user,//发送者邮箱
@@ -32,10 +32,11 @@ module.exports = {
                 'X-Laziness-level': 1000
             }
         });
-    },
+    }
     /**
      * 发送邮件
      * @param {json} message 发送的信息：
+     * @example
      例子：var message = {
          // Comma separated lsit of recipients 收件人用逗号间隔
          to: '12xxxx101@qq.com',
@@ -74,10 +75,10 @@ module.exports = {
      };
      * @returns {*}
      */
-    sendMail: function (message) {
+    sendMail (message) {
         return new Promise(async (resolve, reject) => {
-            if (!this.transporter) this._createTransporter()
-            let transporter = this.transporter
+            if (!this._transporter) this._createTransporter()
+            let transporter = this._transporter
             transporter.sendMail(message, (error, info) => {
                 if (error) {
                     reject(error)
@@ -89,5 +90,7 @@ module.exports = {
                 resolve(info.response)
             });
         })
-    },
+    }
 };
+
+module.exports = new mail()

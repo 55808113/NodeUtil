@@ -8,6 +8,9 @@ const $log4js = require('./log4js')
 const $util = require('./util')
 const $convert = require('./convert')
 
+/**
+ * mysql连接数据库的类
+ */
 class mysqlHelper {
     constructor() {
 
@@ -15,13 +18,12 @@ class mysqlHelper {
     //连接池
     _pool = null
     /**
-     * Create a new Pool instance.
-     * @param {object|string} config Configuration or connection string for new MySQL connections
-     * @return {Pool} A new MySQL pool
+     * 创建一个连接池
+     * @param {object|string} config 数据库配置文件
+     * @return {Pool} 连接池对象
      * @public
      */
     createPool (config){
-        let self = this;
         this._pool = mysql.createPool(config)
         return this._pool
     }
@@ -29,9 +31,12 @@ class mysqlHelper {
      * 拼写sql存储过程语句
      * @param {string} sql sql语句
      * @param {object[]} params 参数数组
-     * @returns {*}
+     * @returns {string} 合并好的sql语句
+     * @example
+     * getSqlStr("call a()",[param.a,param.b])
+     * 返回 call a(?,?)
      */
-    getSqlStr (sql, params) {
+    getSqlStr (sql, params=[]) {
         let result = "";
         if (sql.indexOf("call ") != -1) {
             result = sql.replace(")", "");
@@ -73,10 +78,12 @@ class mysqlHelper {
     /**
      * 执行sql语句，自己传pool对象
      * @param {string} sql sql语句
-     * @param {object[]} params sql参数
+     * @param {object[]} [params] sql参数
      * @returns {Promise<object[]>}
+     * @example
+     * await execSql("call a()",[param.a,param.b])
      */
-    async execSql (sql, params= []) {
+    async execSql (sql, params) {
         let result = 0
         params = params || []
 
@@ -96,6 +103,8 @@ class mysqlHelper {
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
      * @returns {Promise<number>}
+     * @example
+     * await $sqlhelper.execSqlByTransaction("call sp_card_add()", [param.sfzh, param.xm])
      */
     async execSqlByTransaction (sql, params) {
         let result = 0

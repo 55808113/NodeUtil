@@ -5,7 +5,7 @@ var config = Config('config.json', () => {
 	botController = BotController(config)	
 })
 */
-var jsonfile = require('jsonfile')
+const jsonfile = require('jsonfile')
 
 var Config = (file, callback) => {
     var c = {}
