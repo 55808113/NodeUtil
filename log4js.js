@@ -2,6 +2,7 @@
  日志记录
  */
 const log4js = require('log4js')
+const _ = require('lodash')
 const debugSqlInfo = require('debug')('sqlinfo');
 const path = require('path')
 class logger {
@@ -63,11 +64,30 @@ class logger {
         this._resLogger = log4js.getLogger('response')
         this._sqlInfoLogger = log4js.getLogger('sqlInfo')
         this._sqlErrLogger = log4js.getLogger('sqlErr')
+
     }
     _errorLogger = null
     _resLogger = null
     _sqlInfoLogger = null
     _sqlErrLogger = null
+    options = {
+        /**
+         * 输出等级 "info" "error"
+         */
+        level: "info"
+    }
+    /**
+     * 设置等级
+     * @param {object} opts 选项
+     */
+    init (opts){
+        opts = _.assign(this.options,opts)
+        //设置等级。来显示不同的输出。===========================
+        this._errorLogger.level = opts.level
+        this._resLogger.level = opts.level
+        this._sqlInfoLogger.level = opts.level
+        this._sqlErrLogger.level = opts.level
+    }
     /**
      * 日志的路径
      * @type {object}
