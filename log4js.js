@@ -12,7 +12,7 @@ class logger {
                 error: {
                     type: 'dateFile',           //日志类型可以是file或者dataFile
                     category: 'errLogger',    //日志名称
-                    filename: path.join(self.loggerDir.root, self.loggerDir.error), //日志输出位置，当目录文件或文件夹不存在时自动创建
+                    filename: path.join(self.loggerDir.root, self.loggerDir.error, "err"), //日志输出位置，当目录文件或文件夹不存在时自动创建
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
                     maxLogSize: 104800, // 文件最大存储空间
@@ -21,7 +21,7 @@ class logger {
                 response: {
                     type: 'dateFile',
                     category: 'resLogger',
-                    filename: path.join(self.loggerDir.root, self.loggerDir.response),
+                    filename: path.join(self.loggerDir.root, self.loggerDir.response, "res"),
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
                     maxLogSize: 104800,
@@ -30,7 +30,7 @@ class logger {
                 sqlInfo: {
                     type: 'dateFile',
                     category: 'sqlInfoLogger',
-                    filename: path.join(self.loggerDir.root, self.loggerDir.sqlInfo),
+                    filename: path.join(self.loggerDir.root, self.loggerDir.sqlInfo, "sqlInfo"),
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
                     maxLogSize: 104800,
@@ -39,7 +39,7 @@ class logger {
                 sqlErr: {
                     type: 'dateFile',
                     category: 'sqlErrLogger',
-                    filename: path.join(self.loggerDir.root, self.loggerDir.sqlErr),
+                    filename: path.join(self.loggerDir.root, self.loggerDir.sqlErr, "sqlErr"),
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
                     maxLogSize: 104800, // 文件最大存储空间
@@ -54,6 +54,8 @@ class logger {
                 default: {appenders: ['response'], level: 'info'}
             },
             replaceConsole: true,
+            /*pm2: true,
+            pm2InstanceVar: 'INSTANCE_ID',*/
             //添加pm2的支持。如果是pm2需要添加这个配置才能打印出日志
             disableClustering: process.env.NODE_APP_INSTANCE !=undefined?true:false
         })
