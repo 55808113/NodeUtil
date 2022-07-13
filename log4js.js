@@ -2,6 +2,8 @@
  日志记录
  */
 const log4js = require('log4js')
+//把控制台输出信息的字符串颜色改变
+const chalk = require('chalk')
 const _ = require('lodash')
 const debugSqlInfo = require('debug')('sqlinfo');
 const path = require('path')
@@ -117,7 +119,7 @@ class logger {
             } else {
                 log = {resTime, error}
             }
-            console.error(error);
+            console.error(`${chalk.red(error)}`)
             this._errorLogger.error(log)
         }
     }
