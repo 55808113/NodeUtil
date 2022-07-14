@@ -18,8 +18,8 @@ class logger {
                     filename: path.join(self.loggerDir.root, self.loggerDir.error, "err"), //日志输出位置，当目录文件或文件夹不存在时自动创建
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
-                    maxLogSize: 104800, // 文件最大存储空间
-                    backups: 100  //当文件内容超过文件存储空间时，备份文件的数量
+                    maxLogSize: 50 * 1024 * 1024, // 文件最大存储空间 超过就生成xxx.log.1
+                    backups: 60  //当文件内容超过文件存储空间时，备份文件的数量 default 5天
                 },
                 response: {
                     type: 'dateFile',
@@ -27,8 +27,8 @@ class logger {
                     filename: path.join(self.loggerDir.root, self.loggerDir.response, "res"),
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
-                    maxLogSize: 104800,
-                    backups: 100
+                    maxLogSize: 50 * 1024 * 1024,
+                    backups: 30
                 },
                 sqlInfo: {
                     type: 'dateFile',
@@ -36,8 +36,8 @@ class logger {
                     filename: path.join(self.loggerDir.root, self.loggerDir.sqlInfo, "sqlInfo"),
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
-                    maxLogSize: 104800,
-                    backups: 100
+                    maxLogSize: 50 * 1024 * 1024,
+                    backups: 30
                 },
                 sqlErr: {
                     type: 'dateFile',
@@ -45,8 +45,8 @@ class logger {
                     filename: path.join(self.loggerDir.root, self.loggerDir.sqlErr, "sqlErr"),
                     pattern: 'yyyy-MM-dd.log', //日志输出模式
                     alwaysIncludePattern: true,
-                    maxLogSize: 104800, // 文件最大存储空间
-                    backups: 100  //当文件内容超过文件存储空间时，备份文件的数量
+                    maxLogSize: 50 * 1024 * 1024, // 文件最大存储空间
+                    backups: 60  //当文件内容超过文件存储空间时，备份文件的数量
                 }
             },
             categories: {
