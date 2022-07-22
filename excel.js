@@ -15,12 +15,56 @@ const $upload = require('./upload')
 const $file = require('./file')
 const $sqlhelper = require('./mysql-helper')
 
+
+
 /**
  * 操作Excel相关函数
  */
 class excel {
     constructor() {
 
+    }
+    /**
+     * 显示的格式样式 百分比，整形等格式
+     * @type {{style9: number, style0: number, style1: number, style2: number, style3: number, style10: number, style4: number}}
+     */
+    cellStyle = {
+        /**
+         * 通常格式
+         */
+        styleCommon: 0,
+        /**
+         * 通常格式局中
+         */
+        styleCenter: 1,
+        /**
+         * excel的标题
+         */
+        styleCaption: 2,
+        /**
+         * 格式'0'
+         */
+        style1: 3,
+        /**
+         * 格式'0.00'
+         */
+        style2: 4,
+        /**
+         * 格式'＃,##0'
+         */
+        style3: 5,
+        /**
+         * 格式'＃,##0.00'
+         */
+        style4: 6,
+        /**
+         * 格式'0％'
+         */
+        style9: 7,
+        /**
+         * 格式'0.00％'
+         */
+        style10: 8
     }
     options = {
         //错误的文件目录
@@ -123,15 +167,22 @@ class excel {
      * 得到一个sheet对象
      * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
-     * @param {string} sheetTitle sheet标题
+     * @param {string} [sheetTitle] sheet标题
      * @returns {{}}
      */
     getConfig (headerObj, rows, sheetTitle){
         //得到config对象
         function _getConf(headers){
-            function getCol(title, type) {
+            /**
+             * 得到列对象
+             * @param {string} title 标题名称
+             * @param {string} type 属性类型
+             * @param {int} [cellStyle] 显示的格式
+             * @returns {{width: number, captionStyleIndex: number, caption, beforeCellWrite: (function(*, *=, *=): number), type}}
+             */
+            function getCol(title, type, cellStyle) {
                 //格式判断
-                function format(val, opt) {
+                function format(val, opt, styleIndex) {
                     let type = opt.cellType;
 
                     /*function addzero(v) {
@@ -146,19 +197,19 @@ class excel {
                         case "date":
                             opt.cellType = "string";
                             //居中对齐
-                            opt.styleIndex = 1;
+                            opt.styleIndex = self.cellStyle.styleCenter;
                             val = $convert.getDateString(val)
                             break;
                         case "datetime":
                             opt.cellType = "string";
                             //居中对齐
-                            opt.styleIndex = 1;
+                            opt.styleIndex = self.cellStyle.styleCenter;
                             val = $convert.getDateTimeString(val)
                             break;
                         case "bool":
                             opt.cellType = "string";
                             //居中对齐
-                            opt.styleIndex = 1;
+                            opt.styleIndex = self.cellStyle.styleCenter;
                             if (!$util.isEmpty(val)) {
                                 if ($convert.getBool(val)) {
                                     val = "是";
@@ -170,6 +221,7 @@ class excel {
                             }
                             break;
                         case "number":
+                            opt.styleIndex = styleIndex;
                             val = $convert.getNumber(val,null)
                             break;
                     }
@@ -192,6 +244,7 @@ class excel {
                     }
                     return result
                 }
+
                 let col = {
                     caption:title,
                     //所有的属性类型都是string
@@ -208,16 +261,18 @@ class excel {
                      //   </cellXfs>
                      // 这个就是style.xml这个节点cellXfs中的索引号。
                      */
-                    captionStyleIndex:2,
+                    captionStyleIndex: self.cellStyle.styleCaption,
+                    //styleIndex:colStyle,
                     //日期格式要改变成string否则显示有问题
                     beforeCellWrite: function (row, cellData, eOpt) {
-                        let value = format(cellData, eOpt);
+                        let value = format(cellData, eOpt, cellStyle);
                         return value;
                     }
                 };
 
                 return col
             }
+
             let conf = {};
             //可以设置样式
             conf.stylesXmlFile = path.join(__dirname,"excel_styles.xml");
@@ -255,7 +310,7 @@ class excel {
                         conf.cols.push(col);
                     })
                 } else {
-                    let col = getCol(item.title, item.type)
+                    let col = getCol(item.title, item.type, item.cellStyle)
                     conf.cols.push(col);
                 }
             }
@@ -325,6 +380,10 @@ class excel {
                     name: key,
                     type: columntype,
                     title: item.title,
+                    /**
+                     * 单元格样式
+                     */
+                    cellStyle: item.cellStyle,
                     order: item.order,
                     /**
                      * 像类型这样的，这个是类型对应的名称
@@ -341,6 +400,7 @@ class excel {
             }
             return _.orderBy(headers, ['order'], ['asc']);
         }
+        let self = this;
         if ($util.isEmpty(rows)){
             throw new Error("没有查询到要导出的数据！")
         }
@@ -365,7 +425,7 @@ class excel {
     }
     /**
      * 导出excel数据流
-     * @param {object}  headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
+     * @param {object}  headerObj 导出的头文件格式 [{name : key,type : item.type,captionStyle:item.captionStyle, title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
      * @returns {*}
      */
