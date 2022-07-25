@@ -145,7 +145,7 @@ class convert {
                     }
                 }
             } else {
-                result.push(arr)
+                result = _.split(arr,',')
             }
         }
         return result
