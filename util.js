@@ -297,6 +297,9 @@ module.exports = {
      * @param obj
      */
     isEmptyObject: function (item) {
+        if (item==undefined||item==null) {
+            return true;
+        }
         if (Object.keys(item).length == 0) {
             return true;
         }
