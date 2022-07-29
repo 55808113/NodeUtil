@@ -189,15 +189,39 @@ class file {
         return result
     }
     /**
+     * 重命名文件
+     * @param {string} filepath 原路径
+     * @param {string} newfilepath 新的路径
+     * @returns {Promise<unknown>}
+     */
+    renameFile  (filepath, newfilepath) {
+        let self = this;
+        return new Promise(async (resolve, reject) => {
+            if (fs.existsSync(filepath)) {
+                self.createFolder(path.dirname(newfilepath))
+                //因为下面的方法在文件跨盘符时不行。所以要用下面的方法
+                fs.rename(filepath, newfilepath, function (err) {
+                    if (err) reject(err)
+                    fs.stat(newfilepath, function (err, stats) {
+                        if (err) reject(err)
+                        //console.log('stats: ' + JSON.stringify(stats));
+                        resolve();
+                    });
+                });
+            }
+        })
+    }
+    /**
      * 重命名或者移动文件
      * @param {string} filepath 原路径
      * @param {string} newfilepath 新的路径
      * @returns {Promise<unknown>}
      */
     moveFile (filepath, newfilepath) {
+        let self = this;
         return new Promise(async (resolve, reject) => {
             if (fs.existsSync(filepath)) {
-                this.createFolder(path.dirname(newfilepath))
+                self.createFolder(path.dirname(newfilepath))
                 //因为下面的方法在文件跨盘符时不行。所以要用下面的方法
                 /*fs.rename(filepath, newfilepath, function (err) {
                     if (err) reject(err)
