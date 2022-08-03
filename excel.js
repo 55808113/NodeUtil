@@ -160,15 +160,23 @@ class excel {
      * @returns {{}}
      */
     getConfigbyData (colInfos, rows){
-        let headerObj = this.convertColInfosToHeaderObj(colInfos)
+        let headerObj = this._convertColInfosToHeaderObj(colInfos)
         return this.getConfig(headerObj,rows)
     }
     /**
      * 得到一个sheet对象
-     * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
+     * @param {object|object[]} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
      * @param {string} [sheetTitle] sheet标题
      * @returns {{}}
+     * @example
+     let headers = {};
+     headers.sfzh = $message.card.sfzh;
+     headers.xm = $message.card.xm;
+     headers.xb = $message.card.xb;
+     let headers = [];
+     headers.push({name:"sfzh",value:$message.card.sfzh});
+     $excel.getConfig(headers, rows, "");
      */
     getConfig (headerObj, rows, sheetTitle){
         //得到config对象
@@ -404,7 +412,19 @@ class excel {
         if ($util.isEmpty(rows)){
             throw new Error("没有查询到要导出的数据！")
         }
-        let headers = _getHeaders(headerObj)
+        let headers
+        //当数组时根据数据的顺序排序
+        if (_.isArray(headerObj)){
+            let tempHeaderObj = {};
+            let i = 0;
+            for (const item of headerObj) {
+                tempHeaderObj[item.name] = _.assign({},item.value,{order:i++})
+            }
+            headers = _getHeaders(tempHeaderObj)
+        }else{
+            headers = _getHeaders(headerObj)
+        }
+
         let conf = _getConf(headers)
         conf.rows = _getDatas(headers,rows);
         return conf
@@ -413,7 +433,7 @@ class excel {
      * 转换colInfos到HeaderObj
      * @param colInfos
      */
-    convertColInfosToHeaderObj (colInfos){
+    _convertColInfosToHeaderObj (colInfos){
         let headerObj = {};
         for (let key in colInfos) {
             let item = colInfos[key]
@@ -425,7 +445,7 @@ class excel {
     }
     /**
      * 导出excel数据流
-     * @param {object}  headerObj 导出的头文件格式 [{name : key,type : item.type,captionStyle:item.captionStyle, title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
+     * @param {object|object[]}  headerObj 导出的头文件格式 [{name : key,type : item.type,captionStyle:item.captionStyle, title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
      * @returns {*}
      */
@@ -437,9 +457,10 @@ class excel {
      * 导出excel
      * @param ctx
      * @param {string} title 导出的文件名
-     * @param {object} headerObj 导出的头文件格式对象
+     * @param {object|object[]} headerObj 导出的头文件格式对象
      * @param {object[]} rows 导出的数据
-     * 例子 let headers = {};
+     * @example
+     let headers = {};
      headers.sfzh = $message.card.sfzh;
      headers.xm = $message.card.xm;
      headers.xb = $message.card.xb;
@@ -459,7 +480,7 @@ class excel {
      * @param {object[]} rows 导出的数据
      */
     expExcelbyData (ctx, title, colInfos, rows) {
-        let headerObj = this.convertColInfosToHeaderObj(colInfos)
+        let headerObj = this._convertColInfosToHeaderObj(colInfos)
         this.expExcel(ctx, title, headerObj, rows);
     }
     /**
@@ -467,9 +488,10 @@ class excel {
      * @param ctx
      * @param {string} title 导出的文件名
      * @param {object[]} configs getConfig的数据数组
-     * let configs = []
-     let config1 = $excel.getConfig($excel.convertColInfosToHeaderObj($message.process_request_kpi_quality),result)
-     let config2 = $excel.getConfig($excel.convertColInfosToHeaderObj($message.process_request_kpi_quality),result)
+     * @example
+     let configs = []
+     let config1 = $excel.getConfigbyData($message.process_request_kpi_quality,result)
+     let config2 = $excel.getConfigbyData($message.process_request_kpi_quality,result)
      configs.push(config1)
      configs.push(config2)
      $excel.expExcelbyConfig(ctx,$message.process_request_kpi_quality.title,configs)

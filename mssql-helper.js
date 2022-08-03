@@ -80,6 +80,7 @@ class mssqlhelper {
                 case "boolean":
                     break;
                 default:
+                    request.addParameter(paramname+(i+1), TYPES.NVarChar, params[i]);
                     break;
             }
         }
