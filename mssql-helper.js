@@ -310,9 +310,11 @@ class mssqlhelper {
         if (pageSize!=-1) {
             bgnID = (pageIndex - 1) * pageSize + 1
             endID = pageIndex * pageSize
-            if (!$util.isNotEmpty(sort)) {
+            if ($util.isEmpty(sort)) {
                 //当没有排序时需要定义一个排序的列，就把主键定义为排序的列
                 sort = options.id
+            }
+            if ($util.isEmpty(order)){
                 order = "ASC"
             }
             sql = `select count(0) as totalCount from ${tablename} where 1=1 ${sqlData}`;
