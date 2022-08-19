@@ -511,7 +511,7 @@ class excel {
      * @returns {Promise<unknown>}
      */
     expExcelbyTemplate (ctx, title, templatePath, rows) {
-        let templateFs = $file.readFile(path.join(process.cwd(), templatePath),'')
+        let templateFs = $file.readFile(templatePath,'')
         return new Promise((resolve, reject) => {
             ejsexcel.renderExcelCb(templateFs, rows, function (err, exlBuf) {
                 if (err) {
