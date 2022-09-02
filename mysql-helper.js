@@ -126,6 +126,39 @@ class mysqlHelper {
         }
         return result;
     }
+
+    /**
+     * 执行事务的函数
+     * @param {function} fn 返回的函数
+     * @returns {Promise<void>}
+     * @example
+     * await $sqlhelper.execByTransaction(async function(connection){
+            let userPkids = JSON.parse(param.userpkids);
+            for (const userPkid of userPkids) {
+                await $sqlhelper.execSqlByConn(connection, "call sp_sysuserrole_add()", [userPkid, param.cd_sysrole_pkid])
+            }
+        })
+     */
+    async execByTransaction (fn) {
+        let connection = await this.getConn();
+        await this.beginTransaction(connection);
+        try {
+            if (fn){
+                await fn(connection)
+            }
+            connection.commit((error) => {
+                if(error) {
+                    throw error;
+                    console.log('事务提交失败')
+                }
+            })
+        } catch (err) {
+            connection.rollback();
+            throw err
+        } finally {
+            connection.release();
+        }
+    }
     /**
      * 得到所有表数据
      * @returns {Promise<object>}
