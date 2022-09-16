@@ -7,6 +7,7 @@ const compressing = require('compressing')
 const http = require('http')
 const $util = require('./util')
 const $crypto = require('./crypto')
+const $convert = require('./convert')
 /**
  文件处理的函数
  */
@@ -62,6 +63,16 @@ class file {
         } else {
             throw new Error(filepath + "文件不存在")
         }
+    }
+
+    /**
+     * 读json文件
+     * @param {string} filepath 文件路径
+     * @param {string} encoding 编码的参数 encoding为null时返回流。否则返回字符串
+     * @returns {JSON|null}
+     */
+    readJson(filepath, encoding = "utf-8"){
+        return $convert.strToJson(this.readFile(filepath,encoding))
     }
     /**
      * 写文件

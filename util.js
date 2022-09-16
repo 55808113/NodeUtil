@@ -35,7 +35,7 @@ module.exports = {
     /**
      * 向前台返回JSON方法的简单封装
      * @param ctx
-     * @param {object[]} rows 记录集
+     * @param {object[]||object} rows 记录集
      * @param {int} pageIndex 当前页
      * @param {int} pageSize 每个个数
      * @param {object} params 返回的其它参数
