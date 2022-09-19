@@ -340,6 +340,18 @@ class file {
         let data = fs.readFileSync(filepath);
         return Buffer.from(data, 'base64');
     }
+    async base64ToFile (filepath, data) {
+        var matches = data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
+            response = {};
+
+        if (matches.length !== 3) {
+            return new Error('Invalid input string');
+        }
+
+        response.type = matches[1];
+        response.data = new Buffer(matches[2], 'base64');
+        await this.writeFile(filepath, response.data)
+    }
     /**
      * 判断是否为目录
      * @param filepath

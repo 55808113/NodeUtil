@@ -108,9 +108,13 @@ class mysqlHelper {
      */
     async execSqlByTransaction (sql, params) {
         let result = 0
-        let connection = await this.getConn();
+        let self = this;
+        await this.execByTransaction(async function (connection){
+            result = await self.execSqlByConn(connection, sql, params)
+        })
+        /*let connection = await this.getConn();
         try {
-            await this.beginTransaction(connection);
+            await this._beginTransaction(connection);
             result = await this.execSqlByConn(connection, sql, params)
             connection.commit((error) => {
                 if(error) {
@@ -123,7 +127,7 @@ class mysqlHelper {
             throw err
         } finally {
             this._pool.releaseConnection(connection)
-        }
+        }*/
         return result;
     }
 
@@ -141,7 +145,7 @@ class mysqlHelper {
      */
     async execByTransaction (fn) {
         let connection = await this.getConn();
-        await this.beginTransaction(connection);
+        await this._beginTransaction(connection);
         try {
             if (fn){
                 await fn(connection)
@@ -156,7 +160,8 @@ class mysqlHelper {
             connection.rollback();
             throw err
         } finally {
-            connection.release();
+            this._pool.releaseConnection(connection)
+            //connection.release();
         }
     }
     /**
@@ -221,7 +226,7 @@ class mysqlHelper {
      * @param {Connection} connection
      * @returns {Promise<boolean>} 返回true成功，false失败
      */
-    beginTransaction (connection){
+    _beginTransaction (connection){
         return new Promise((resolve, reject) => {
             connection.beginTransaction(err => {
                 if (err) {
