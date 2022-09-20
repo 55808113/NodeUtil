@@ -371,10 +371,15 @@ module.exports = {
     evil:function (command) {
         var Fn = Function;  //一个变量指向Function，防止有些前端编译工具报错
         //command = this.replaceAll(command, '"',"'")
-        if (command.indexOf("return")!=-1){
-            return new Fn(command)();
-        }else{
-            return new Fn("return" + command)();
+        try{
+            if (command.indexOf("return")!=-1){
+                return new Fn(command)();
+            }else{
+                return new Fn("return" + command)();
+            }
+        }catch (err){
+            $log4js.errLogger(null,{evilcommand:command})
+            throw err;
         }
     }
 };
