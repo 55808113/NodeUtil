@@ -165,7 +165,7 @@ class excel {
     }
     /**
      * 得到一个sheet对象
-     * @param {object|object[]} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
+     * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
      * @param {string} [sheetTitle] sheet标题
      * @returns {{}}
@@ -445,7 +445,7 @@ class excel {
     }
     /**
      * 导出excel数据流
-     * @param {object|object[]}  headerObj 导出的头文件格式 [{name : key,type : item.type,captionStyle:item.captionStyle, title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
+     * @param {object}  headerObj 导出的头文件格式 [{name : key, type : item.type, captionStyle:item.captionStyle, title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
      * @returns {*}
      */
@@ -507,13 +507,13 @@ class excel {
      * @param ctx
      * @param {string} title 导出的文件名
      * @param {string} templatePath Excel模板文件路径
-     * @param {object[]} rows 导出的数据
+     * @param {object[]} data 导出的数据
      * @returns {Promise<unknown>}
      */
-    expExcelbyTemplate (ctx, title, templatePath, rows) {
+    expExcelbyTemplate (ctx, title, templatePath, data) {
         let templateFs = $file.readFile(templatePath,'')
         return new Promise((resolve, reject) => {
-            ejsexcel.renderExcelCb(templateFs, rows, function (err, exlBuf) {
+            ejsexcel.renderExcelCb(templateFs, data, function (err, exlBuf) {
                 if (err) {
                     reject(new Error('[EXCEL生成失败!]:' + path.basename(templatePath) + err.message))
                     return;
@@ -611,10 +611,13 @@ class excel {
 
             $file.createFolder(filepath)
 
-            let headers = [];
+            let headers = {};
             let failinfo = failInfos[0];
             for (let key in failinfo) {
-                headers.push({name: key, title: key, type: convertType(failinfo[key])})
+                headers[key] = {
+                    title: key,
+                    type: convertType(failinfo[key])
+                }
             }
             let excelStream = this.expExcelStream(headers, failInfos)
             $file.writeFile(path.join(filepath, resultInfo.failfilename), excelStream)
