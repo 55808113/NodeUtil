@@ -14,7 +14,7 @@ const $convert = require('./convert')
 const $upload = require('./upload')
 const $file = require('./file')
 const $sqlhelper = require('./mysql-helper')
-
+const $mssqlhelper = require('./mssql-helper')
 
 
 /**
@@ -557,8 +557,27 @@ class excel {
             }
             return result
         }
+
+        /**
+         *
+         * @param type
+         * @returns {mysqlHelper|{mysqlhelper?: mysqlHelper}}
+         */
+        function getSqlhelper(type){
+            var result = $sqlhelper
+            switch (type){
+                case 0://mysql
+                    result = $sqlhelper;
+                    break;
+                case 1://mssql
+                    result = $mssqlhelper;
+                    break;
+            }
+            return result
+        }
         let options = {
             sql:"",
+            type:0,//0:mysql,1:mssql
             //上传文件成功事件:让程序取得一些参数
             onUploadFileSuccess: async function (ctx){
 
@@ -575,8 +594,7 @@ class excel {
         let rows = xlsxDatatoJson(uploaddata)
         let failInfos = []
         let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
-        let connection = await $sqlhelper.getConn();
-        try {
+        await getSqlhelper(options.type).execByConnection(async function(connection){
             for (let i = 0; i < rows.length; i++) {
                 let item = rows[i];
                 try {
@@ -587,10 +605,10 @@ class excel {
                     //如果返回数组代表是一下导入多条数据。
                     if (_.isArray(param)){
                         for (const paramElement of param) {
-                            await $sqlhelper.execSqlByConn(connection, options.sql, paramElement)
+                            await getSqlhelper(options.type).execSqlByConn(connection, options.sql, paramElement)
                         }
                     }else{
-                        await $sqlhelper.execSqlByConn(connection, options.sql, param)
+                        await getSqlhelper(options.type).execSqlByConn(connection, options.sql, param)
                     }
                     resultInfo.success = resultInfo.success + 1;
                 } catch (err) {
@@ -599,11 +617,7 @@ class excel {
                     failInfos.push(info)
                 }
             }
-            connection.release();
-        } catch (err) {
-            connection.release();
-            throw err
-        }
+        });
 
         resultInfo.fail = failInfos.length;
         //如果有错误的话。把错误信息保存到本地让客户下载

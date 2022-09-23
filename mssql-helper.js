@@ -94,21 +94,25 @@ class mssqlhelper {
      * await mssqlhelper.execSql("",[param.id])
      */
     async execSql (sql, params= []) {
+        let self = this
         let result = 0
         params = params || []
+        await this.execByConnection(async function (connection){
+            result = await self.execSqlByConn(connection, sql, params)
+        })
+        return result;
+    }
+    async execByConnection(fn){
+        let connection = await this.getConn();
         try {
-            let connection = await this.getConn();
-            try {
-                result = await this.execSqlByConn(connection, sql, params)
-            } catch (err) {
-                throw err
-            } finally {
-                connection.close();
+            if (fn){
+                await fn(connection)
             }
         } catch (err) {
             throw err
+        } finally {
+            connection.close();
         }
-        return result;
     }
     /**
      * 执行事务sql语句
@@ -126,7 +130,7 @@ class mssqlhelper {
             } catch (err) {
                 throw err
             } finally {
-                //connection.close();
+                connection.close();
             }
         } catch (err) {
             throw err

@@ -84,17 +84,12 @@ class mysqlHelper {
      * await execSql("call a()",[param.a,param.b])
      */
     async execSql (sql, params) {
+        let self = this
         let result = 0
         params = params || []
-
-        let connection = await this.getConn();
-        try {
-            result = await this.execSqlByConn(connection, sql, params)
-        } catch (err) {
-            throw err
-        } finally {
-            this._pool.releaseConnection(connection)
-        }
+        await this.execByConnection(async function (connection){
+            result = await self.execSqlByConn(connection, sql, params)
+        })
 
         return result;
     }
@@ -158,6 +153,19 @@ class mysqlHelper {
             })
         } catch (err) {
             connection.rollback();
+            throw err
+        } finally {
+            this._pool.releaseConnection(connection)
+            //connection.release();
+        }
+    }
+    async execByConnection (fn) {
+        let connection = await this.getConn();
+        try {
+            if (fn){
+                await fn(connection)
+            }
+        } catch (err) {
             throw err
         } finally {
             this._pool.releaseConnection(connection)
