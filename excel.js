@@ -557,15 +557,14 @@ class excel {
             }
             return result
         }
-
         /**
          *
-         * @param type
+         * @param sqlType
          * @returns {mysqlHelper|{mysqlhelper?: mysqlHelper}}
          */
-        function getSqlhelper(type){
+        function getSqlhelper(sqlType){
             var result = $sqlhelper
-            switch (type){
+            switch (sqlType){
                 case 0://mysql
                     result = $sqlhelper;
                     break;
@@ -577,38 +576,45 @@ class excel {
         }
         let options = {
             sql:"",
-            type:0,//0:mysql,1:mssql
+            sqlType:0,//0:mysql,1:mssql
             //上传文件成功事件:让程序取得一些参数
             onUploadFileSuccess: async function (ctx){
 
             },
-            //设置参数
-            onSetParams:async function (item){
+            /**
+             *
+             * @param item 上传的数据
+             * @param bodyParam post提交的参数数据
+             * @returns {Promise<void>}
+             */
+            onSetParams:async function (item,bodyParam){
 
             }
         }
         options = _.assign({},options,opts)
         let filepath = this.options.impFailpath
         let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
+
         await options.onUploadFileSuccess.call(this,ctx)
         let rows = xlsxDatatoJson(uploaddata)
         let failInfos = []
         let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
-        await getSqlhelper(options.type).execByConnection(async function(connection){
+        await getSqlhelper(options.sqlType).execByConnection(async function(connection){
             for (let i = 0; i < rows.length; i++) {
                 let item = rows[i];
                 try {
-                    let param = await options.onSetParams.call(this,item)
-                    if (!param) {
+                    let bodyParam = ctx.request.body
+                    let param = await options.onSetParams.call(this,item,bodyParam)
+                    if (!param||param.length==0) {
                         throw "callbackParam参数没有设置插入的数据！"
                     }
                     //如果返回数组代表是一下导入多条数据。
-                    if (_.isArray(param)){
+                    if (_.isArray(param[0])){
                         for (const paramElement of param) {
-                            await getSqlhelper(options.type).execSqlByConn(connection, options.sql, paramElement)
+                            await getSqlhelper(options.sqlType).execSqlByConn(connection, options.sql, paramElement)
                         }
                     }else{
-                        await getSqlhelper(options.type).execSqlByConn(connection, options.sql, param)
+                        await getSqlhelper(options.sqlType).execSqlByConn(connection, options.sql, param)
                     }
                     resultInfo.success = resultInfo.success + 1;
                 } catch (err) {
