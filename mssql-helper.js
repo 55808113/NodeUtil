@@ -72,7 +72,14 @@ class mssqlhelper {
         for (let i = 0; i < params.length; i++) {
             switch (typeof params[i]) {
                 case "number":
-                    request.addParameter(paramname+(i+1), TYPES.Numeric, params[i]);
+                    let options = {}
+                    //让数据为小数。
+                    if (!_.isInteger(params[i])){
+                        options = {
+                            scale:2
+                        }
+                    }
+                    request.addParameter(paramname+(i+1), TYPES.Numeric, params[i],options);
                     break;
                 case "string":
                     request.addParameter(paramname+(i+1), TYPES.NVarChar, params[i]);
@@ -278,7 +285,7 @@ class mssqlhelper {
                 WHERE sc.id = col.id
                 AND sc.colid = col.colid
             ) THEN
-            '√' ELSE ''
+            'Y' ELSE 'N'
             END AS columnKey
         FROM dbo.syscolumns col
         LEFT JOIN dbo.systypes t ON col.xtype = t.xusertype
