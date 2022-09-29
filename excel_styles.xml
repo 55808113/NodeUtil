@@ -62,14 +62,16 @@
 	</cellStyleXfs>
 	<cellXfs count="9">
 		<!--通常格式-->
-		<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
+		<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0">
+			<alignment vertical="center"/>
+		</xf>
 		<!--通常格式局中-->
 		<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0">
-			<alignment horizontal="center"/>
+			<alignment horizontal="center" vertical="center"/>
 		</xf>
 		<!--excel的标题-->
 		<xf numFmtId="0" fontId="0" fillId="2" borderId="1" xfId="1" applyFont="1">
-			<alignment horizontal="center"/>
+			<alignment horizontal="center" vertical="center"/>
 		</xf>
 		<!--格式'0'-->
 		<xf numFmtId="1" fontId="0" fillId="0" borderId="0" xfId="0"/>
