@@ -157,16 +157,19 @@ class excel {
      * 得到一个sheet对象
      * @param {object} colInfos message的对象信息
      * @param rows 导出的数据
+     * @param {object[]} [mergeCells] 合并单元格对象[{mergeField:'',premiseField:''}]
+     * @param {string} [sheetTitle] sheet标题
      * @returns {{}}
      */
-    getConfigbyData (colInfos, rows){
+    getConfigbyData (colInfos, rows, mergeCells, sheetTitle){
         let headerObj = this._convertColInfosToHeaderObj(colInfos)
-        return this.getConfig(headerObj,rows)
+        return this.getConfig(headerObj, rows, mergeCells, sheetTitle)
     }
     /**
      * 得到一个sheet对象
      * @param {object} headerObj 导出的头文件格式 [{name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
+     * @param {object[]} [mergeCells] 合并单元格对象[{mergeField:'',premiseField:''}]
      * @param {string} [sheetTitle] sheet标题
      * @returns {{}}
      * @example
@@ -178,17 +181,18 @@ class excel {
      headers.push({name:"sfzh",value:$message.card.sfzh});
      $excel.getConfig(headers, rows, "");
      */
-    getConfig (headerObj, rows, sheetTitle){
+    getConfig (headerObj, rows, mergeCells, sheetTitle){
         //得到config对象
         function _getConf(headers){
             /**
              * 得到列对象
+             * @param {string} name 字段名称
              * @param {string} title 标题名称
              * @param {string} type 属性类型
              * @param {int} [cellStyle] 显示的格式
              * @returns {{width: number, captionStyleIndex: number, caption, beforeCellWrite: (function(*, *=, *=): number), type}}
              */
-            function getCol(title, type, cellStyle) {
+            function getCol(name, title, type, cellStyle) {
                 //格式判断
                 function format(val, opt, styleIndex) {
                     let type = opt.cellType;
@@ -255,6 +259,8 @@ class excel {
 
                 let col = {
                     caption:title,
+                    //字段名称
+                    name:name,
                     //所有的属性类型都是string
                     type:type,
                     //width不好使
@@ -314,11 +320,11 @@ class excel {
                                 type = "string"
                                 break;
                         }
-                        let col = getCol(n.label, type)
+                        let col = getCol(n.name, n.label, type)
                         conf.cols.push(col);
                     })
                 } else {
-                    let col = getCol(item.title, item.type, item.cellStyle)
+                    let col = getCol(item.name, item.title, item.type, item.cellStyle)
                     conf.cols.push(col);
                 }
             }
@@ -427,6 +433,7 @@ class excel {
 
         let conf = _getConf(headers)
         conf.rows = _getDatas(headers,rows);
+        conf.mergeCells = mergeCells;
         return conf
     }
     /**
@@ -447,10 +454,12 @@ class excel {
      * 导出excel数据流
      * @param {object}  headerObj 导出的头文件格式 [{name : key, type : item.type, captionStyle:item.captionStyle, title : item.title,order : item.order,templaterows : item.templaterows}, {name : key,type : item.type,title : item.title,order : item.order,templaterows : item.templaterows}]
      * @param {object[]} rows 导出的数据
+     * @param {object[]} [mergeCells] 合并单元格对象[{mergeField:'',premiseField:''}]
+     * @param {string} [sheetTitle] sheet标题
      * @returns {*}
      */
-    expExcelStream (headerObj, rows) {
-        let conf = this.getConfig(headerObj, rows)
+    expExcelStream (headerObj, rows, mergeCells, sheetTitle) {
+        let conf = this.getConfig(headerObj, rows, mergeCells, sheetTitle)
         return Buffer.from(nodeExcel.execute(conf), 'binary');
     }
     /**
@@ -459,6 +468,8 @@ class excel {
      * @param {string} title 导出的文件名
      * @param {object|object[]} headerObj 导出的头文件格式对象
      * @param {object[]} rows 导出的数据
+     * @param {object[]} [mergeCells] 合并单元格对象[{mergeField:'',premiseField:''}]
+     * @param {string} [sheetTitle] sheet标题
      * @example
      let headers = {};
      headers.sfzh = $message.card.sfzh;
@@ -466,8 +477,8 @@ class excel {
      headers.xb = $message.card.xb;
      $excel.expExcel(ctx, $message.card.title, headers, rows);
      */
-    expExcel (ctx, title, headerObj, rows) {
-        let excelStream = this.expExcelStream(headerObj, rows)
+    expExcel (ctx, title, headerObj, rows, mergeCells, sheetTitle) {
+        let excelStream = this.expExcelStream(headerObj, rows, mergeCells, sheetTitle)
         ctx.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
         ctx.set("Content-Disposition", "attachment; filename=" + encodeURIComponent(title) + ".xlsx");
         ctx.body = excelStream
@@ -478,10 +489,12 @@ class excel {
      * @param {string} title 导出的文件名
      * @param {object} colInfos 导出的头文件格式
      * @param {object[]} rows 导出的数据
+     * @param {object[]} [mergeCells] 合并单元格对象[{mergeField:'',premiseField:''}]
+     * @param {string} [sheetTitle] sheet标题
      */
-    expExcelbyData (ctx, title, colInfos, rows) {
+    expExcelbyData (ctx, title, colInfos, rows, mergeCells, sheetTitle) {
         let headerObj = this._convertColInfosToHeaderObj(colInfos)
-        this.expExcel(ctx, title, headerObj, rows);
+        this.expExcel(ctx, title, headerObj, rows, mergeCells, sheetTitle);
     }
     /**
      * 多个sheet的导出 通过getConfig的方法得到数据。然后把数据传到这个函数进行导出
@@ -639,7 +652,7 @@ class excel {
                     type: convertType(failinfo[key])
                 }
             }
-            let excelStream = this.expExcelStream(headers, failInfos)
+            let excelStream = this.expExcelStream(headers, failInfos, null, "错误信息")
             $file.writeFile(path.join(filepath, resultInfo.failfilename), excelStream)
         }
         return resultInfo
