@@ -488,7 +488,7 @@ class excel {
      * @param ctx
      * @param {string} title 导出的文件名
      * @param {object} colInfos 导出的头文件格式
-     * @param {object[]} rows 导出的数据
+     * @param {object[]|object} rows 导出的数据
      * @param {object[]} [mergeCells] 合并单元格对象[{mergeField:'',premiseField:''}]
      * @param {string} [sheetTitle] sheet标题
      */

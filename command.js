@@ -131,8 +131,8 @@ module.exports = {
     /**
      * window执行命令行命令
      * @param {string} cmd
-     * @param {object} opts
-     * @param {function} callback 返回的参数
+     * @param {object} [opts]
+     * @param {function} [callback] 返回的参数
      */
     execWin: function (cmd, opts, callback) {
         if (!callback) {
@@ -141,8 +141,17 @@ module.exports = {
         }
         let newCmd = 'chcp 65001 > nul && cmd /C ' + cmd + ' && chcp ' + this.getCodepage() + ' > nul';
         childprocess.exec(newCmd, opts, function (error, stdout) {
-            callback(error, stdout);
-        });
+            if (callback){
+                callback(error, stdout);
+            }
+        }).stdin.end();
+    },
+    execWinSync: function (cmd, opts) {
+        let newCmd = 'chcp 65001 > nul && cmd /C ' + cmd + ' && chcp ' + this.getCodepage() + ' > nul';
+        if (!opts) {
+            opts = execOptsWin;
+        }
+        return childprocess.execSync(newCmd, opts);
     },
     /**
      * 执行powerShell语句
