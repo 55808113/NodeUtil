@@ -556,7 +556,8 @@ class excel {
             let workbook = xlsx.read(xlsData);
             let sheetNames = workbook.SheetNames; // 返回 ['sheet1', 'sheet2',……]
             let worksheet = workbook.Sheets[sheetNames[0]];// 获取excel的第一个表格
-            return xlsx.utils.sheet_to_json(worksheet);
+            //defval添加这个可以可以让值为空的列导出来
+            return xlsx.utils.sheet_to_json(worksheet,{defval:null});
         }
         //转换为导出模板的类型
         function convertType(data){
@@ -573,7 +574,7 @@ class excel {
         /**
          *
          * @param sqlType
-         * @returns {mysqlHelper|{mysqlhelper?: mysqlHelper}}
+         * @returns {mysqlhelper|mssqlhelper}
          */
         function getSqlhelper(sqlType){
             var result = $sqlhelper
