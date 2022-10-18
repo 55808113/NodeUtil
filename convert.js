@@ -49,7 +49,7 @@ class convert {
         if ($util.isEmpty(val))
             return defaultvalue;
         else
-            return val;
+            return val.toString();
     }
     /**
      * 得到日期类型
