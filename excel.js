@@ -110,6 +110,9 @@ class excel {
             case "double":
                 result = "number";
                 break;
+            case "decimal":
+                result = "number";
+                break;
             case "real":
                 result = "number";
                 break;
