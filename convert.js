@@ -100,6 +100,25 @@ class convert {
         //千万不要修改为_.isEmpty(val)因为这个函数无法判断日期
         return this.getDateTimeString(val, template);
     }
+
+    /**
+     * 得到MS毫秒转换为分和小时的格式：xxMS xx秒 xx分
+     * @param val
+     */
+    getDateByMSString(val){
+        var sizes = ['ms','s','min','h'];
+        if ($util.isEmpty(val)) return 'n/a';
+        var result = ""
+        var i = parseInt(Math.floor(Math.log(val) / Math.log(1000)));
+        val = (val / Math.pow(1000, i)).toFixed(0)
+        if (i==0){
+            result = val + ' ' + sizes[0];
+        }else{
+            i = parseInt(Math.floor(Math.log(val) / Math.log(60)));
+            result = (val / Math.pow(60, i)).toFixed(1) + ' ' + sizes[i+1];
+        }
+        return result;
+    }
     /**
      * 字符串转成数组
      * @param {string} str 数组字符串
