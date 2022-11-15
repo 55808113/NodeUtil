@@ -67,7 +67,7 @@ class convert {
     /**
      * 得到数字。如果为空根据默认值返回
      * @param {number} val 值
-     * @param {number} defaultvalue 默认值
+     * @param {number} [defaultvalue] 默认值
      * @returns {number}
      */
     getNumber (val, defaultvalue = 0) {
