@@ -27,7 +27,7 @@ module.exports = {
                 message: '操作失败'
             }
         } else {
-            ctx.body = data
+            ctx.body = data || {}
         }
         ctx.status = 200
         ctx.set("Content-Type", "text/json")

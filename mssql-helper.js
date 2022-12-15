@@ -311,6 +311,35 @@ class mssqlhelper {
      * @returns {Promise<Object>}
      */
     async selectAllByTablePage (tablename, pageIndex, pageSize, order, sort, sqlData, options={}) {
+        //得到排序的字段。因为order有可能是“asc,asc”这样的数组。所以需要判断一下排序
+        function getSort(sort,order){
+            let result = []
+            
+            if ($util.isEmpty(order)){
+                order = "ASC"
+            }
+            if ($util.isEmpty(sort)) {
+                //当没有排序时需要定义一个排序的列，就把主键定义为排序的列
+                return `${options.id} ${order}`
+            }
+            let arrOrder = order.split(",")
+            var arrSort = sort.split(",")
+            for (let i = 0; i < arrSort.length; i++) {
+                let itemSort = arrSort[i]
+                let itemOrder = "ASC"
+                if (arrOrder.length>i){
+                    itemOrder = arrOrder[i]
+                }
+                //没有空格就代表没有排序
+                if (itemSort.indexOf(" ")==-1){
+                    result.push(`${itemSort} ${itemOrder}`)
+                }else{
+                    result.push(itemSort)
+                }
+            }
+
+            return result.join(",")
+        }
         options = _.assign({},{id:"pkid"}, options)
         //let sqlOrder = ""
         let sql = ""
@@ -321,19 +350,13 @@ class mssqlhelper {
         if (pageSize!=-1) {
             bgnID = (pageIndex - 1) * pageSize + 1
             endID = pageIndex * pageSize
-            if ($util.isEmpty(sort)) {
-                //当没有排序时需要定义一个排序的列，就把主键定义为排序的列
-                sort = options.id
-            }
-            if ($util.isEmpty(order)){
-                order = "ASC"
-            }
+            sort = getSort(sort,order)
             sql = `select count(0) as totalCount from ${tablename} where 1=1 ${sqlData}`;
             //得到总数
             let row = await this.execSql(sql);
             totalCount = row[0].totalCount
             sql = `select ${totalCount} AS TOTAL,a.* FROM 
-            (select ROW_NUMBER() over (order by ${sort} ${order}) orderid,* from ${tablename} where 1=1 ${sqlData}) a
+            (select ROW_NUMBER() over (order by ${sort}) orderid,* from ${tablename} where 1=1 ${sqlData}) a
             where (a.orderid between ${bgnID} and ${endID})`
         }else{
             sql = `select 0 AS TOTAL,a.* FROM 
