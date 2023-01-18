@@ -3,13 +3,13 @@
  * 必须在调试里添加下面的语句--tls-min-v1.0 否则无法连接数据库
  *
  * */
-const {Connection,Request,TYPES} = require('tedious');
+const mssql = require('mssql');
 const _ = require('lodash')
 const $log4js = require('./log4js')
 const $util = require('./util')
 const $convert = require('./convert')
 //参数的别名以A开头：例如@A1,@A2....
-const paramname = "A"
+const PARAMNAME = "A"
 
 /**
  * mssql数据库相关函数
@@ -21,14 +21,21 @@ class mssqlhelper {
     }
     //连接
     //connection: null,
-    _config=null
+    _poolConnect=null
     /**
      * 创建一个连接池
      * @param {object} config 连接的配置对象
      * @return {Pool} A new MySQL pool
      */
     async createPool (config){
-        this._config = config
+        const pool = new mssql.ConnectionPool(config)
+
+        this._poolConnect = pool.connect()
+
+        pool.on('error', err => {
+            $log4js.sqlErrLogger("创建连接", "错误", err)
+        })
+        console.log("mssql创建连接池成功！")
     }
     /**
      * 得到sql语句
@@ -41,56 +48,189 @@ class mssqlhelper {
         while (index!=-1) {
             index = sql.indexOf("?")
             if (index!=-1){
-                sql = _.replace(sql,"?","@" + paramname + i++)
+                sql = _.replace(sql,"?","@" + PARAMNAME + i++)
             }
         }
         return sql
     }
-    /**
-     * 得到getConnection
-     * @returns {Promise<Connection>}
-     */
-    getConn() {
-        return new Promise((resolve, reject) => {
-            let connection = new Connection(this._config);
-            connection.connect(function (err) {
-                if (err) {
-                    $log4js.sqlErrLogger("创建连接", "错误", err)
-                    console.log(err.message)
-                    reject(err)
-                } else {
-                    resolve(connection)
-                }
-            });
-        })
-    }
+
     /**
      * 根据类型设置存储过程参数
+     * @param {Request} request Request
      * @param {object[]} params sql参数数组
      */
     _setParams (request, params){
         for (let i = 0; i < params.length; i++) {
-            switch (typeof params[i]) {
+            let param_name = PARAMNAME+(i+1)
+            let value = params[i]
+            switch (typeof value) {
                 case "number":
-                    let options = {}
+                    let options = mssql.Numeric
                     //让数据为小数。
-                    if (!_.isInteger(params[i])){
-                        options = {
-                            scale:2
-                        }
+                    if (!_.isInteger(value)){
+                        options.scale = 2
                     }
-                    request.addParameter(paramname+(i+1), TYPES.Numeric, params[i],options);
+                    request.input(param_name, options, value);
                     break;
                 case "string":
-                    request.addParameter(paramname+(i+1), TYPES.NVarChar, params[i]);
+                    request.input(param_name, mssql.NVarChar, value);
                     break;
                 case "boolean":
                     break;
                 default:
-                    request.addParameter(paramname+(i+1), TYPES.NVarChar, params[i]);
+                    request.input(param_name, mssql.NVarChar, value);
                     break;
             }
         }
+    }
+    /**
+     * 得到存储过程参数名称
+     * @param {Connection} connection 连接对象
+     * @param {string} ProcedureName
+     * @returns {object}
+     * @private
+     */
+    async _getProcedureParameters(ProcedureName){
+        let sql = `SELECT sp.object_id AS FunctionId,
+            sp.name AS FunctionName,
+            ( CASE WHEN param.is_output = 1 THEN 'OUTPUT' ELSE 'IN' END ) AS ParamType,
+            ISNULL( param.name, '' ) AS ParamName,
+            ISNULL( usrt.name, '' ) AS [DataType],
+            ISNULL( baset.name, '' ) AS [SystemType],
+            CAST (
+                CASE
+                    WHEN baset.name IS NULL THEN
+                    0
+                    WHEN baset.name IN ( 'nchar', 'nvarchar' ) AND param.max_length <> - 1 THEN
+                    param.max_length / 2 ELSE param.max_length
+                    END AS INT
+                ) AS [Length],
+            ISNULL( parameter_id, 0 ) AS SortId,
+            '' AS ParamReamrk
+            FROM
+            sys.objects AS sp
+            INNER JOIN sys.schemas b ON sp.schema_id = b.schema_id
+            LEFT OUTER JOIN sys.all_parameters AS param ON param.object_id = sp.object_id
+            LEFT OUTER JOIN sys.types AS usrt ON usrt.user_type_id = param.user_type_id
+            LEFT OUTER JOIN sys.types AS baset ON ( baset.user_type_id = param.system_type_id AND baset.user_type_id = baset.system_type_id )
+            OR (
+                ( baset.system_type_id = param.system_type_id )
+                AND ( baset.user_type_id = param.user_type_id )
+                AND ( baset.is_user_defined = 0 )
+                AND ( baset.is_assembly_type = 1 )
+            )
+            LEFT OUTER JOIN sys.extended_properties E ON sp.object_id = E.major_id
+            WHERE sp.object_id = OBJECT_ID( @A1)
+            AND sp.type IN ( 'FN', 'IF', 'TF', 'P' )
+            AND ISNULL( sp.is_ms_shipped, 0 ) = 0
+            AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
+            ORDER BY sp.name , param.parameter_id ASC;`
+        return await this.execSql(sql,[ProcedureName])
+    }
+    /**
+     * 得到参数的实际类型
+     * @param {string} parametersType
+     * @returns {Promise<object>}
+     * @private
+     */
+    _getParametersType(parametersType){
+        let result = mssql.NVarChar
+        switch (parametersType) {
+            case 'tinyint':
+                result = mssql.TinyInt
+                break;
+            case 'bit':
+                result = mssql.Bit
+                break;
+            case 'smallint':
+                result = mssql.SmallInt
+                break;
+            case 'int':
+                result = mssql.Int
+                break;
+            case 'smalldatetime':
+                result = mssql.SmallDateTime
+                break;
+            case 'real':
+                result = mssql.Real
+                break;
+            case 'money':
+                result = mssql.Money
+                break;
+            case 'datetime':
+                result = mssql.DateTime
+                break;
+            case 'float':
+                result = mssql.Float
+                break;
+            case 'decimal':
+                result = mssql.Decimal
+                break;
+            case 'numeric':
+                result = mssql.Numeric
+                break;
+            case 'smallmoney':
+                result = mssql.SmallMoney
+                break;
+            case 'bigint':
+                result = mssql.BigInt
+                break;
+            case 'image':
+                result = mssql.Image
+                break;
+            case 'text':
+                result = mssql.Text
+                break;
+            case 'uniqueIdentifier':
+                result = mssql.UniqueIdentifier
+                break;
+            case 'ntext':
+                result = mssql.NText
+                break;
+            case 'varbinary':
+                result = mssql.VarBinary
+                break;
+            case 'varchar':
+                result = mssql.VarChar
+                break;
+            case 'binary':
+                result = mssql.Binary
+                break;
+            case 'char':
+                result = mssql.Char
+                break;
+            case 'nvarchar':
+                result = mssql.NVarChar
+                break;
+            case 'nchar':
+                result = mssql.NChar
+                break;
+            case 'xml':
+                result = mssql.Xml
+                break;
+            case 'time':
+                result = mssql.Time
+                break;
+            case 'date':
+                result = mssql.Date
+                break;
+            case 'datetime2':
+                result = mssql.DateTime2
+                break;
+            case 'datetimeoffset':
+                result = mssql.DateTimeOffset
+                break;
+            case 'udt':
+                result = mssql.UDT
+                break;
+            case 'tvp':
+                result = mssql.TVP
+                break;
+            case 'variant':
+                result = mssql.Variant
+                break;
+        }
+        return result
     }
     /**
      * 执行sql语句
@@ -102,24 +242,25 @@ class mssqlhelper {
      */
     async execSql (sql, params= []) {
         let self = this
-        let result = 0
-        params = params || []
-        await this.execByConnection(async function (connection){
-            result = await self.execSqlByConn(connection, sql, params)
-        })
-        return result;
-    }
-    async execByConnection(fn){
-        let connection = await this.getConn();
+        const start = new Date()
+        let ms = 0
+        let result = {}
         try {
-            if (fn){
-                await fn(connection)
+
+            sql = self.getSqlStr(sql)
+            let request = new mssql.Request(await self._poolConnect)
+            request.multiple = true
+            if (params) {
+                self._setParams(request, params)
             }
+            result = await request.query(sql);
+            ms = new Date() - start
+            $log4js.sqlInfoLogger(sql, params, ms)
         } catch (err) {
+            $log4js.sqlErrLogger(sql, params, err, ms)
             throw err
-        } finally {
-            connection.close();
         }
+        return result.recordset;
     }
     /**
      * 执行事务sql语句
@@ -128,21 +269,62 @@ class mssqlhelper {
      * @returns {Promise<object[]>}
      */
     async execSqlByTransaction (sql, params=[]) {
-        let result = 0
-        params = params || []
+        let self = this
+        await self.execByTransaction(async function (transaction){
+            return await self.execSqlTransactionByTransaction(transaction, sql, params)
+        })
+    }
+    /**
+     * 执行事务的函数
+     * @param {function} fn 返回的函数
+     * @returns {Promise<void>}
+     * @example
+     * await $sqlhelper.execByTransaction(async function(connection){
+            let userPkids = JSON.parse(param.userpkids);
+            for (const userPkid of userPkids) {
+                await $sqlhelper.execSqlByConn(connection, "call sp_sysuserrole_add()", [userPkid, param.cd_sysrole_pkid])
+            }
+        })
+     */
+    async execByTransaction (fn) {
+        let self = this
         try {
-            let connection = await this.getConn();
+            const transaction = new mssql.Transaction(await self._poolConnect)
             try {
-                result = await this.execSqlTransactionByConn(connection, sql, params)
+                await transaction.begin()
+                if (fn){
+                    await fn(transaction)
+                }
+                await transaction.commit()
             } catch (err) {
+                await transaction.rollback()
                 throw err
-            } finally {
-                connection.close();
             }
         } catch (err) {
+            $log4js.sqlErrLogger("", params, err, ms)
             throw err
         }
-        return result;
+    }
+    /**
+     * 执行带事务的sql语句
+     * @param {Transaction} transaction 连接对象
+     * @param {string} sql sql语句
+     * @param {object[]} params sql参数
+     * @returns {Promise<object>}
+     */
+    async execSqlTransactionByTransaction (transaction, sql, params) {
+        let self = this
+        const start = new Date()
+        let ms = 0
+        sql = self.getSqlStr(sql)
+        const request = new mssql.Request(transaction)
+        if (params) {
+            self._setParams(request, params)
+        }
+        let result = await request.query(sql);
+        ms = new Date() - start
+        $log4js.sqlInfoLogger(sql, params, ms)
+        return result
     }
     /**
      * 执行存储过程
@@ -150,106 +332,41 @@ class mssqlhelper {
      * @param {object[]} param sql参数
      * @returns {Promise<number>}
      */
-    async execProcedure (sql, params) {
+    async execProcedure (procedureName, params) {
         let result = 0
+        let self = this
         params = params || []
         try {
-            let connection = await this.getConn();
-            try {
-                result = await this.execProcedureByConn(connection, sql, params)
-            } catch (err) {
-                throw err
-            } finally {
-                connection.close();
+            let rsParams = await this._getProcedureParameters(procedureName)
+            let request = new mssql.Request(await self._poolConnect)
+            if ($util.isNotEmpty(rsParams)) {
+                //输入的参数个数
+                let paramInputlength = 0
+                for (let i = 0; i < rsParams.length; i++) {
+                    let param = params[i]
+                    let rsparam = rsParams[i]
+                    let paramType = this._getParametersType(rsparam.DataType)
+                    let paramName = rsparam.ParamName.replace("@","")
+                    if (rsparam.ParamType == "IN"){
+                        paramInputlength++
+                        request.input(paramName, paramType, param);
+                    }else{
+                        request.output(paramName, paramType);
+                    }
+                }
+                if ($util.isEmpty(params) || paramInputlength!=params.length){
+                    throw new Error("存储过程：" + procedureName + "传入的参数与实际参数个数不符！")
+                    return;
+                }
             }
+
+            result = await request.execute(procedureName)
         } catch (err) {
             throw err
         }
         return result;
     }
-    /**
-     * 执行带事务的sql语句
-     * @param {Connection} connection 连接对象
-     * @param {string} sql sql语句
-     * @param {object[]} params sql参数
-     * @returns {Promise<object>}
-     */
-    async execSqlTransactionByConn (connection, sql, params) {
-        /**
-         * 提交事务
-         * @private
-         */
-        function commitTransaction() {
-            connection.commitTransaction((err) => {
-                if (err) {
-                    console.log('commit transaction err: ', err);
-                }
-                //console.log('commitTransaction() done!');
-                //console.log('DONE!');
-                connection.close();
-            });
-        }
-        /**
-         * 回滚事务
-         * @param err
-         * @private
-         */
-        function rollbackTransaction(err) {
-            console.log('transaction err: ', err);
-            connection.rollbackTransaction((err) => {
-                if (err) {
-                    console.log('transaction rollback error: ', err);
-                }
-            });
-            connection.close();
-        }
-        /**
-         * 开始事务
-         * @private
-         */
-        function beginTransaction() {
-            connection.beginTransaction((err) => {
-                if (err) {
-                    // If error in begin transaction, roll back!
-                    rollbackTransaction(err);
-                } else {
-                    //console.log('beginTransaction() done');
-                    // If no error, commit transaction!
-                    commitTransaction();
-                }
-            });
-        }
 
-        const start = new Date()
-        let self = this;
-        return new Promise((resolve, reject) => {
-            // Print the rows read
-            let result = [];
-            sql = self.getSqlStr(sql)
-            // Read all rows from table
-            let request = new Request(sql, function(err, rowCount) {
-                const ms = new Date() - start
-                if (err) {
-                    $log4js.sqlErrLogger(sql, params, err, ms)
-                    reject(err)
-                    return;
-                }
-                //删除时可以知识处理了多少数据
-                if (result.length==0&&rowCount!=0){
-                    result = rowCount
-                }
-                $log4js.sqlInfoLogger(sql, params, ms)
-                beginTransaction()
-                resolve(result)
-            });
-            if (params) {
-                self._setParams(request, params)
-            }
-            //connection.callProcedure()
-            // Execute SQL statement
-            connection.execSql(request);
-        })
-    }
     /**
      * 得到所有表数据
      * @returns {Promise<object>}
@@ -364,266 +481,9 @@ class mssqlhelper {
         }
         return await this.execSql(sql);
     }
-    /**
-     * 执行sql语句
-     * @param {Connection} connection 连接对象
-     * @param {string} sql sql语句
-     * @param {object[]} params sql参数
-     * @returns {Promise<object>}
-     */
-    execSqlByConn (connection, sql, params) {
-        const start = new Date()
-        let self = this
-        return new Promise((resolve, reject) => {
-            // Print the rows read
-            let result = [];
-            sql = self.getSqlStr(sql)
-            // Read all rows from table
-            let request = new Request(sql, function(err, rowCount) {
-                const ms = new Date() - start
-                if (err) {
-                    $log4js.sqlErrLogger(sql, params, err, ms)
-                    reject(err)
-                    return;
-                }
-                //删除时可以知识处理了多少数据
-                if (result.length==0&&rowCount!=0){
-                    result = rowCount
-                }
-                $log4js.sqlInfoLogger(sql, params, ms)
-                resolve(result)
-            });
-            if (params) {
-                self._setParams(request, params)
-            }
-            request.on('row', function(columns) {
-                //当是返回的集合时设置为数组
-                /*if (result==null){
-                    result = []
-                }*/
-                let row = {};
-                columns.forEach(function(column)
-                {
-                    row[column.metadata.colName] = column.value;
-                });
-                result.push(row);
-            });
-            //connection.callProcedure()
-            // Execute SQL statement
-            connection.execSql(request);
-        })
-    }
-    //执行存储过程的相关函数=========================================================
-    /**
-     * 执行sql语句
-     * @param {Connection} connection 连接对象
-     * @param {string} ProcedureName sql语句
-     * @param {object[]} params sql参数
-     * @returns {Promise<object>}
-     */
-    async execProcedureByConn (connection, ProcedureName, params) {
-        /**
-         * 得到存储过程参数名称
-         * @param {Connection} connection 连接对象
-         * @param {string} ProcedureName
-         * @returns {object}
-         * @private
-         */
-        async function _getProcedureParameters(connection, ProcedureName){
-            let sql = `SELECT sp.object_id AS FunctionId,
-            sp.name AS FunctionName,
-            ( CASE WHEN param.is_output = 1 THEN 'OUTPUT' ELSE 'IN' END ) AS ParamType,
-            ISNULL( param.name, '' ) AS ParamName,
-            ISNULL( usrt.name, '' ) AS [DataType],
-            ISNULL( baset.name, '' ) AS [SystemType],
-            CAST (
-                CASE
-                    WHEN baset.name IS NULL THEN
-                    0
-                    WHEN baset.name IN ( 'nchar', 'nvarchar' ) AND param.max_length <> - 1 THEN
-                    param.max_length / 2 ELSE param.max_length
-                    END AS INT
-                ) AS [Length],
-            ISNULL( parameter_id, 0 ) AS SortId,
-            '' AS ParamReamrk
-            FROM
-            sys.objects AS sp
-            INNER JOIN sys.schemas b ON sp.schema_id = b.schema_id
-            LEFT OUTER JOIN sys.all_parameters AS param ON param.object_id = sp.object_id
-            LEFT OUTER JOIN sys.types AS usrt ON usrt.user_type_id = param.user_type_id
-            LEFT OUTER JOIN sys.types AS baset ON ( baset.user_type_id = param.system_type_id AND baset.user_type_id = baset.system_type_id )
-            OR (
-                ( baset.system_type_id = param.system_type_id )
-                AND ( baset.user_type_id = param.user_type_id )
-                AND ( baset.is_user_defined = 0 )
-                AND ( baset.is_assembly_type = 1 )
-            )
-            LEFT OUTER JOIN sys.extended_properties E ON sp.object_id = E.major_id
-            WHERE sp.object_id = OBJECT_ID( @A1)
-            AND sp.type IN ( 'FN', 'IF', 'TF', 'P' )
-            AND ISNULL( sp.is_ms_shipped, 0 ) = 0
-            AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
-            ORDER BY sp.name , param.parameter_id ASC;`
-            return await self.execSqlByConn(connection,sql,[ProcedureName])
-        }
-        /**
-         * 得到参数的实际类型
-         * @param {string} parametersType
-         * @returns {Promise<object>}
-         * @private
-         */
-        function _getParametersType(parametersType){
-            let result = TYPES.NVarChar
-            switch (parametersType) {
-                case 'tinyint':
-                    result = TYPES.TinyInt
-                    break;
-                case 'bit':
-                    result = TYPES.Bit
-                    break;
-                case 'smallint':
-                    result = TYPES.SmallInt
-                    break;
-                case 'int':
-                    result = TYPES.Int
-                    break;
-                case 'smalldatetime':
-                    result = TYPES.SmallDateTime
-                    break;
-                case 'real':
-                    result = TYPES.Real
-                    break;
-                case 'money':
-                    result = TYPES.Money
-                    break;
-                case 'datetime':
-                    result = TYPES.DateTime
-                    break;
-                case 'float':
-                    result = TYPES.Float
-                    break;
-                case 'decimal':
-                    result = TYPES.Decimal
-                    break;
-                case 'numeric':
-                    result = TYPES.Numeric
-                    break;
-                case 'smallmoney':
-                    result = TYPES.SmallMoney
-                    break;
-                case 'bigint':
-                    result = TYPES.BigInt
-                    break;
-                case 'image':
-                    result = TYPES.Image
-                    break;
-                case 'text':
-                    result = TYPES.Text
-                    break;
-                case 'uniqueIdentifier':
-                    result = TYPES.UniqueIdentifier
-                    break;
-                case 'ntext':
-                    result = TYPES.NText
-                    break;
-                case 'varbinary':
-                    result = TYPES.VarBinary
-                    break;
-                case 'varchar':
-                    result = TYPES.VarChar
-                    break;
-                case 'binary':
-                    result = TYPES.Binary
-                    break;
-                case 'char':
-                    result = TYPES.Char
-                    break;
-                case 'nvarchar':
-                    result = TYPES.NVarChar
-                    break;
-                case 'nchar':
-                    result = TYPES.NChar
-                    break;
-                case 'xml':
-                    result = TYPES.Xml
-                    break;
-                case 'time':
-                    result = TYPES.Time
-                    break;
-                case 'date':
-                    result = TYPES.Date
-                    break;
-                case 'datetime2':
-                    result = TYPES.DateTime2
-                    break;
-                case 'datetimeoffset':
-                    result = TYPES.DateTimeOffset
-                    break;
-                case 'udt':
-                    result = TYPES.UDT
-                    break;
-                case 'tvp':
-                    result = TYPES.TVP
-                    break;
-                case 'variant':
-                    result = TYPES.Variant
-                    break;
-            }
-            return result
-        }
-        let self = this
-        const start = new Date()
-        let rsParams = await _getProcedureParameters(connection,ProcedureName)
-        return new Promise((resolve, reject) => {
-            // Print the rows read
-            let result = null;
-            // Read all rows from table
-            let request = new Request(ProcedureName,function(err, rowCount) {
-                const ms = new Date() - start
-                if (err) {
-                    $log4js.sqlErrLogger(ProcedureName, params, err, ms)
-                    reject(err)
-                    return;
-                }
-                //删除时可以知识处理了多少数据
-                if (result==null&&rowCount!=0){
-                    result = rowCount
-                }
-                $log4js.sqlInfoLogger(ProcedureName, params, ms)
-                resolve(result)
-            });
-            if ($util.isNotEmpty(rsParams)) {
-                if ($util.isEmpty(params) || rsParams.length!=params.length){
-                    reject("存储过程：" + ProcedureName + "传入的参数与实际参数个数不符！")
-                    return;
-                }
-                for (let i = 0; i < rsParams.length; i++) {
-                    let param = params[i]
-                    let rsparam = rsParams[i]
-                    let paramType = _getParametersType(rsparam.DataType)
-                    request.addParameter(rsparam.ParamName.replace("@",""), paramType, param);
-                }
-            }
-            request.on('returnValue', (paramName, value, metadata) => {
 
-            });
-            request.on('row', function(columns) {
-                //当是返回的集合时设置为数组
-                if (result==null){
-                    result = []
-                }
-                let row = {};
-                columns.forEach(function(column)
-                {
-                    row[column.metadata.colName] = column.value;
-                });
-                result.push(row);
-            });
-            //connection.callProcedure()
-            // Execute SQL statement
-            connection.callProcedure(request);
-        })
-    }
+    //执行存储过程的相关函数=========================================================
+
 };
 
 module.exports = new mssqlhelper()

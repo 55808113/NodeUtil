@@ -25,6 +25,7 @@ class mysqlHelper {
      */
     createPool (config){
         this._pool = mysql.createPool(config)
+        console.log("mysql创建连接池成功！")
         return this._pool
     }
     /**
