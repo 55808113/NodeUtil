@@ -13,9 +13,10 @@ const $util = require('./util')
 const $convert = require('./convert')
 const $upload = require('./upload')
 const $file = require('./file')
-const $sqlhelper = require('./mysql-helper')
+const $sqlHelper = require('./sql-helper')
+const $mysqlhelper = require('./mysql-helper')
 const $mssqlhelper = require('./mssql-helper')
-
+//const $oraclehelper = require('./oracle-helper')
 
 /**
  * 操作Excel相关函数
@@ -580,20 +581,23 @@ class excel {
          * @returns {mysqlhelper|mssqlhelper}
          */
         function getSqlhelper(sqlType){
-            var result = $sqlhelper
+            var result = $mysqlhelper
             switch (sqlType){
-                case 0://mysql
-                    result = $sqlhelper;
+                case $sqlHelper.SQL_TYPE.MYSQL://mysql
+                    result = $mysqlhelper;
                     break;
-                case 1://mssql
+                case $sqlHelper.SQL_TYPE.MSSQL://mssql
                     result = $mssqlhelper;
+                    break;
+                case $sqlHelper.SQL_TYPE.ORACLE://oracle
+                    result = $oraclehelper;
                     break;
             }
             return result
         }
         let options = {
             sql:"",
-            sqlType:0,//0:mysql,1:mssql
+            sqlType: $sqlHelper.SQL_TYPE.MYSQL,//0:mysql,1:mssql
             //上传文件成功事件:让程序取得一些参数
             onUploadFileSuccess: async function (ctx){
 

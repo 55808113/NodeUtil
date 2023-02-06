@@ -2,21 +2,20 @@
  * mysql数据库相关函数
  *
  * */
+
 const mysql = require('mysql')
 const _ = require('lodash')
 const $log4js = require('./log4js')
 const $util = require('./util')
 const $convert = require('./convert')
-
+const $sqlHelper = require('./sql-helper')
 /**
  * mysql连接数据库的类
  */
-class mysqlHelper {
+class mysqlHelper extends $sqlHelper {
     constructor() {
-
+        super($sqlHelper.SQL_TYPE.MYSQL);
     }
-    //连接池
-    _pool = null
     /**
      * 创建一个连接池
      * @param {object|string} config 数据库配置文件
@@ -24,9 +23,9 @@ class mysqlHelper {
      * @public
      */
     createPool (config){
-        this._pool = mysql.createPool(config)
+        this.pool= mysql.createPool(config)
         console.log("mysql创建连接池成功！")
-        return this._pool
+        return this.pool
     }
     /**
      * 拼写sql存储过程语句
@@ -63,7 +62,7 @@ class mysqlHelper {
         let self = this;
         return new Promise((resolve, reject) => {
             const start = new Date()
-            self._pool.getConnection(function (err, connection) {
+            self.pool.getConnection(function (err, connection) {
                 const ms = new Date() - start
                 if (err) {
                     $log4js.sqlErrLogger("创建连接池", "错误", err, ms)
@@ -94,6 +93,7 @@ class mysqlHelper {
 
         return result;
     }
+
     /**
      * 执行带事务的sql语句
      * @param {string} sql sql语句
@@ -156,7 +156,7 @@ class mysqlHelper {
             connection.rollback();
             throw err
         } finally {
-            this._pool.releaseConnection(connection)
+            this.pool.releaseConnection(connection)
             //connection.release();
         }
     }
@@ -169,7 +169,7 @@ class mysqlHelper {
         } catch (err) {
             throw err
         } finally {
-            this._pool.releaseConnection(connection)
+            this.pool.releaseConnection(connection)
             //connection.release();
         }
     }

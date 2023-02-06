@@ -3,11 +3,13 @@
  * 必须在调试里添加下面的语句--tls-min-v1.0 否则无法连接数据库
  *
  * */
+
 const mssql = require('mssql');
 const _ = require('lodash')
 const $log4js = require('./log4js')
 const $util = require('./util')
 const $convert = require('./convert')
+const $sqlHelper = require('./sql-helper')
 //参数的别名以A开头：例如@A1,@A2....
 const PARAMNAME = "A"
 
@@ -15,24 +17,19 @@ const PARAMNAME = "A"
  * mssql数据库相关函数
  * 必须在调试里添加下面的语句--tls-min-v1.0 否则无法连接数据库
  */
-class mssqlhelper {
+class mssqlhelper extends $sqlHelper  {
     constructor() {
-
+        super($sqlHelper.SQL_TYPE.MSSQL);
     }
-    //连接
-    //connection: null,
-    _poolConnect=null
     /**
      * 创建一个连接池
      * @param {object} config 连接的配置对象
      * @return {Pool} A new MySQL pool
      */
     async createPool (config){
-        const pool = new mssql.ConnectionPool(config)
+        this.pool = new mssql.ConnectionPool(config)
 
-        this._poolConnect = pool.connect()
-
-        pool.on('error', err => {
+        this.pool.on('error', err => {
             $log4js.sqlErrLogger("创建连接", "错误", err)
         })
         console.log("mssql创建连接池成功！")
@@ -232,6 +229,15 @@ class mssqlhelper {
         }
         return result
     }
+
+    /**
+     * 得到getConnection
+     * @returns {Promise<Connection>}
+     */
+    async getConn() {
+        let self = this;
+        return await self.pool.connect()
+    }
     /**
      * 执行sql语句
      * @param {string} sql sql语句
@@ -242,26 +248,14 @@ class mssqlhelper {
      */
     async execSql (sql, params= []) {
         let self = this
-        const start = new Date()
-        let ms = 0
-        let result = {}
-        try {
-
-            sql = self.getSqlStr(sql)
-            let request = new mssql.Request(await self._poolConnect)
-            request.multiple = true
-            if (params) {
-                self._setParams(request, params)
-            }
-            result = await request.query(sql);
-            ms = new Date() - start
-            $log4js.sqlInfoLogger(sql, params, ms)
-        } catch (err) {
-            $log4js.sqlErrLogger(sql, params, err, ms)
-            throw err
-        }
-        return result.recordset;
+        let result = 0
+        params = params || []
+        await this.execByConnection(async function (connection){
+            result = await self.execSqlByConn(connection, sql, params)
+        })
+        return result;
     }
+    //==========================================================================
     /**
      * 执行事务sql语句
      * @param {string} sql sql语句
@@ -289,7 +283,8 @@ class mssqlhelper {
     async execByTransaction (fn) {
         let self = this
         try {
-            const transaction = new mssql.Transaction(await self._poolConnect)
+            let connection = await self.getConn()
+            const transaction = new mssql.Transaction(connection)
             try {
                 await transaction.begin()
                 if (fn){
@@ -326,6 +321,48 @@ class mssqlhelper {
         $log4js.sqlInfoLogger(sql, params, ms)
         return result
     }
+    //==========================================================================
+    async execByConnection (fn) {
+        let connection = await this.getConn();
+        try {
+            if (fn){
+                await fn(connection)
+            }
+        } catch (err) {
+            throw err
+        } finally {
+
+        }
+    }
+    /**
+     * 执行sql语句
+     * @param {Connection} connection 连接对象
+     * @param {string} sql sql语句
+     * @param {object[]} params sql参数
+     * @returns {Promise<unknown>}
+     */
+    async execSqlByConn (connection, sql, params) {
+        let self = this
+        const start = new Date()
+        let ms = 0
+        let result = {}
+        try {
+            sql = self.getSqlStr(sql)
+            let connection = await self.getConn()
+            let request = new mssql.Request(connection)
+            request.multiple = true
+            if (params) {
+                self._setParams(request, params)
+            }
+            result = await request.query(sql);
+            ms = new Date() - start
+            $log4js.sqlInfoLogger(sql, params, ms)
+        } catch (err) {
+            $log4js.sqlErrLogger(sql, params, err, ms)
+            throw err
+        }
+        return result.recordset;
+    }
     /**
      * 执行存储过程
      * @param {string} sql sql语句
@@ -338,7 +375,8 @@ class mssqlhelper {
         params = params || []
         try {
             let rsParams = await this._getProcedureParameters(procedureName)
-            let request = new mssql.Request(await self._poolConnect)
+            let connection = await self.getConn()
+            let request = new mssql.Request(connection)
             if ($util.isNotEmpty(rsParams)) {
                 //输入的参数个数
                 let paramInputlength = 0
@@ -356,7 +394,7 @@ class mssqlhelper {
                 }
                 if ($util.isEmpty(params) || paramInputlength!=params.length){
                     throw new Error("存储过程：" + procedureName + "传入的参数与实际参数个数不符！")
-                    return;
+                    return null;
                 }
             }
 

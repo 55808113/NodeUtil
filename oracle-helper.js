@@ -2,13 +2,17 @@
  * oracle数据库相关函数
  *
  * */
+
 const oracle = require('oracledb')
 const $log4js = require('./log4js')
-
+const $sqlHelper = require('./sql-helper')
 /**
  * oracle数据库相关函数
  */
-class oraclehelper {
+class oraclehelper extends $sqlHelper {
+    constructor() {
+        super($sqlHelper.SQL_TYPE.ORACLE);
+    }
     /**
      * resultSet记录集对象转换成json数组格式
      * @param {object} resultSet
