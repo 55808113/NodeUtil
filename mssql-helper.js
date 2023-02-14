@@ -32,7 +32,7 @@ class mssqlhelper extends $sqlHelper  {
         this.pool.on('error', err => {
             $log4js.sqlErrLogger("创建连接", "错误", err)
         })
-        console.log("mssql创建连接池成功！")
+        console.log("开始创建连接池mssql！")
     }
     /**
      * 得到sql语句

@@ -24,7 +24,7 @@ class mysqlHelper extends $sqlHelper {
      */
     createPool (config){
         this.pool= mysql.createPool(config)
-        console.log("mysql创建连接池成功！")
+        console.log("开始创建连接池mysql！")
         return this.pool
     }
     /**
