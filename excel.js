@@ -524,7 +524,7 @@ class excel {
      * @param ctx
      * @param {string} title 导出的文件名
      * @param {string} templatePath Excel模板文件路径
-     * @param {object[]} data 导出的数据
+     * @param {object[]||object} data 导出的数据
      * @returns {Promise<unknown>}
      */
     expExcelbyTemplate (ctx, title, templatePath, data) {
