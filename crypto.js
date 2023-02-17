@@ -1,4 +1,4 @@
-
+//加密函数
 const CryptoJS = require("crypto-js")
 const AESkey = "www.sunxdd.com"
 const AESvi = "abcdefg123456"

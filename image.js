@@ -4,6 +4,7 @@
 
 const path = require('path')
 const fs = require('fs')
+//多线程处理事务的函数
 const async = require('async')
 const maxworkers = require('os').cpus().length
 const resizeImg = require('resize-img')
