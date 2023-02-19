@@ -4,7 +4,7 @@
 // 刷新验证码
 function refreshCode() {
     //获取当前的时间作为参数，无具体意义
-    var timenow = new Date().getTime();
+    let timenow = new Date().getTime();
     $.ajax({
         type: "get",
         dataType: "json",

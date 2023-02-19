@@ -132,7 +132,7 @@ module.exports = {
          * @private
          */
         function resizeimg(params, callback) {
-            /*var imoptions = {
+            /*let imoptions = {
                 src: params.src,
                 dest: params.dest
             };

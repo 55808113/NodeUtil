@@ -61,8 +61,8 @@ module.exports = {
                         reject(err)
                         return
                     }
-                    /*for (var i=0;i<faces.length; i++){
-                        var x = faces[i]
+                    /*for (let i=0;i<faces.length; i++){
+                        let x = faces[i]
                         im.ellipse(x.x + x.width/2, x.y + x.height/2, x.width/2, x.height/2);
                     }
                     im.save(outfile);*/
@@ -97,8 +97,8 @@ module.exports = {
                             reject(err)
                             return
                         }
-                        /*for (var i = 0; i < body.length; i++) {
-                            var x = body[i]
+                        /*for (let i = 0; i < body.length; i++) {
+                            let x = body[i]
                             im.rectangle([x.x, x.y], [x.width, x.height]);
                         }
                         im.save(path.join(__dirname, "../../out.jpg"));*/

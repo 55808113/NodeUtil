@@ -581,7 +581,7 @@ class excel {
          * @returns {mysqlhelper|mssqlhelper}
          */
         function getSqlhelper(sqlType){
-            var result = $mysqlhelper
+            let result = $mysqlhelper
             switch (sqlType){
                 case $sqlHelper.SQL_TYPE.MYSQL://mysql
                     result = $mysqlhelper;

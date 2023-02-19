@@ -1,6 +1,6 @@
 /**
  * 生成easyuitree控件函数
- * var dataBinding = {
+ * let dataBinding = {
         items: [{
                 name: "item 1",
                 price: 100

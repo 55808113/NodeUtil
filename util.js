@@ -344,9 +344,9 @@ module.exports = {
      * @returns {string}
      */
     randomColor: function (min, max) {
-        var _r = this.randomNum(min, max);
-        var _g = this.randomNum(min, max);
-        var _b = this.randomNum(min, max);
+        let _r = this.randomNum(min, max);
+        let _g = this.randomNum(min, max);
+        let _b = this.randomNum(min, max);
         return "rgb(" + _r + "," + _g + "," + _b + ")";
     },
     /**
@@ -369,7 +369,7 @@ module.exports = {
      * @returns {*}
      */
     evil:function (command) {
-        var Fn = Function;  //一个变量指向Function，防止有些前端编译工具报错
+        let Fn = Function;  //一个变量指向Function，防止有些前端编译工具报错
         //command = this.replaceAll(command, '"',"'")
         try{
             if (command.indexOf("return")!=-1){

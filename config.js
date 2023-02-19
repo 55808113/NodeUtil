@@ -1,14 +1,14 @@
 /**
 读取和写json文件
-var config = Config('config.json', () => {
+ let config = Config('config.json', () => {
 	// Main Controller
 	botController = BotController(config)	
 })
 */
 const jsonfile = require('jsonfile')
 
-var Config = (file, callback) => {
-    var c = {}
+let Config = (file, callback) => {
+    let c = {}
 
     c.data = {}
     c.save = (cb) => {
@@ -18,7 +18,7 @@ var Config = (file, callback) => {
         })
     }
 
-    var open = (cb) => {
+    let open = (cb) => {
         jsonfile.readFile(file, (err, o) => {
             c.data = o
             if(cb!=undefined) cb()

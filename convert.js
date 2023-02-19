@@ -106,10 +106,10 @@ class convert {
      * @param val
      */
     getDateByMSString(val){
-        var sizes = ['ms','s','min','h'];
+        let sizes = ['ms','s','min','h'];
         if ($util.isEmpty(val)) return 'n/a';
-        var result = ""
-        var i = parseInt(Math.floor(Math.log(val) / Math.log(1000)));
+        let result = ""
+        let i = parseInt(Math.floor(Math.log(val) / Math.log(1000)));
         val = (val / Math.pow(1000, i)).toFixed(0)
         if (i==0){
             result = val + ' ' + sizes[0];

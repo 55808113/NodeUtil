@@ -37,7 +37,7 @@ class mail {
      * 发送邮件
      * @param {json} message 发送的信息：
      * @example
-     例子：var message = {
+     例子：let message = {
          // Comma separated lsit of recipients 收件人用逗号间隔
          to: '12xxxx101@qq.com',
          // Subject of the message 信息主题

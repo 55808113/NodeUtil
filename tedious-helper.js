@@ -323,7 +323,7 @@ class mssqlhelper {
                 return `${options.id} ${order}`
             }
             let arrOrder = order.split(",")
-            var arrSort = sort.split(",")
+            let arrSort = sort.split(",")
             for (let i = 0; i < arrSort.length; i++) {
                 let itemSort = arrSort[i]
                 let itemOrder = "ASC"

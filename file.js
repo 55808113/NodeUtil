@@ -341,7 +341,7 @@ class file {
         return Buffer.from(data, 'base64');
     }
     async base64ToFile (filepath, data) {
-        var matches = data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
+        let matches = data.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/),
             response = {};
 
         if (matches.length !== 3) {
