@@ -518,6 +518,10 @@ class mssqlhelper extends $sqlHelper  {
         }else{
             sql = `select 0 AS TOTAL,a.* FROM 
             (select * from ${tablename} where 1=1 ${sqlData}) a`
+            if ($util.isNotEmpty(sort)){
+                sort = getSort(sort,order)
+                sql += ` order by ${sort}`
+            }
         }
         return await this.execSql(sql);
     }
