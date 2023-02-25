@@ -502,6 +502,8 @@ class mssqlhelper extends $sqlHelper  {
         let bgnID = 1
         let endID = 20
         sqlData = $convert.getString(sqlData)
+        //当不分页时pageSize为空。所以默认值为-1
+        pageSize = $convert.getNumber(pageSize,-1)
         if (pageSize!=-1) {
             bgnID = (pageIndex - 1) * pageSize + 1
             endID = pageIndex * pageSize
