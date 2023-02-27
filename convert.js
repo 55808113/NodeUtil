@@ -171,7 +171,7 @@ class convert {
     }
     /**
      * 字符串转json类型
-     * @param {string} str 要转换的字符串
+     * @param {string|Object} str 要转换的字符串
      * @returns {JSON|null} 返回JSON对象
      */
     strToJson (str) {

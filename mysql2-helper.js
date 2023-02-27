@@ -86,7 +86,7 @@ class mysql2Helper extends $sqlHelper {
     }
     /**
      * 得到getConnection
-     * @returns {Promise<Connection>}
+     * @returns {Promise<PoolConnection>}
      */
     async _getConnection () {
         let self = this;
@@ -160,7 +160,9 @@ class mysql2Helper extends $sqlHelper {
             connection.rollback();
             throw err
         } finally {
-            connection.release();
+            // 直接释放连接。但是这样会影响速度
+            //connection.destroy();
+            connection.release()
         }
     }
     async getConnection (fn) {
@@ -172,9 +174,9 @@ class mysql2Helper extends $sqlHelper {
         } catch (err) {
             throw err
         } finally {
-            // 释放连接
-            connection.release();
-            //connection.release();
+            // 直接释放连接。但是这样会影响速度
+            //connection.destroy();
+            connection.release()
         }
     }
     /**

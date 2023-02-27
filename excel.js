@@ -14,7 +14,7 @@ const $convert = require('./convert')
 const $upload = require('./upload')
 const $file = require('./file')
 const $sqlHelper = require('./sql-helper')
-const $mysqlhelper = require('./mysql-helper')
+const $mysqlhelper = require('./mysql2-helper')
 const $mssqlhelper = require('./mssql-helper')
 //const $oraclehelper = require('./oracle-helper')
 
