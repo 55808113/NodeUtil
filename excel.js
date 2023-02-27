@@ -620,7 +620,7 @@ class excel {
         let rows = xlsxDatatoJson(uploaddata)
         let failInfos = []
         let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
-        await getSqlhelper(options.sqlType).execByConnection(async function(connection){
+        await getSqlhelper(options.sqlType).getConnection(async function(connection){
             for (let i = 0; i < rows.length; i++) {
                 let item = rows[i];
                 try {
@@ -632,10 +632,10 @@ class excel {
                     //如果返回数组代表是一下导入多条数据。
                     if (_.isArray(param[0])){
                         for (const paramElement of param) {
-                            await getSqlhelper(options.sqlType).execSqlByConn(connection, options.sql, paramElement)
+                            await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, paramElement)
                         }
                     }else{
-                        await getSqlhelper(options.sqlType).execSqlByConn(connection, options.sql, param)
+                        await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, param)
                     }
                     resultInfo.success = resultInfo.success + 1;
                 } catch (err) {

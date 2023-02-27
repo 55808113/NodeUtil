@@ -25,9 +25,8 @@ module.exports = {
     /**
      * 生成缩略图
      * @param {string} filepath 文件路径
-     * @param {string} thumbnailname 缩略图文件名
-     * @param {json} option 参数
-     * @param {int} imgW 图片的宽度
+     * @param {string} [thumbnailname] 缩略图文件名
+     * @param {json} [option] 参数 {width:200,height:200}
      */
     resizeimg: function (filepath, thumbnailname, option) {
         let smallfilename = thumbnailname || this.getSmallImgName(filepath);

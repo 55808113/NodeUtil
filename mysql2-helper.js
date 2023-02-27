@@ -1,8 +1,9 @@
 /**
- * mysql数据库相关函数
+ * mysql数据库相关函数使用mysql2的包
+ * 这个包可以把json字段返回json对象。不像mysql包只是返回字符串
  *
  * @example
- * mysql: {
+ * mysql2: {
         host: 'localhost',//MySQL数据库地址
         user: 'root',//MySQL数据库用户
         password: 'sunxdd3154271',//MySQL数据库密码
@@ -11,10 +12,10 @@
         connectionLimit: 10, //一次性建立的最大连接数目  默认为 10
         queueLimit: 100//连接池的最大排队数目 超出报错 如果为0，则没有限制数目，默认为0
     }
- mysqlHelper.createPool(mysql)
+ mysql2Helper.createPool(mysql2)
  * */
 
-const mysql = require('mysql')
+const mysql2 = require('mysql2/promise')
 const _ = require('lodash')
 const $log4js = require('./log4js')
 const $util = require('./util')
@@ -23,7 +24,7 @@ const $sqlHelper = require('./sql-helper')
 /**
  * mysql连接数据库的类
  */
-class mysqlHelper extends $sqlHelper {
+class mysql2Helper extends $sqlHelper {
     constructor() {
         super($sqlHelper.SQL_TYPE.MYSQL);
     }
@@ -34,8 +35,26 @@ class mysqlHelper extends $sqlHelper {
      * @public
      */
     createPool (config){
-        this.pool= mysql.createPool(config)
         console.log("开始创建连接池mysql！")
+        this.pool = mysql2.createPool(config)
+        /*// 进程退出时自动关闭连接池
+        process.on('exit', async (code) => {
+            try {
+                await this.pool.end()
+            } catch (error) {
+
+            }
+        })*/
+        /*//测试数据库是否连接成功
+        this.pool.getConnection((err, conn) => {
+            conn.connect((err) => {
+                if (err) {
+                    console.log('mysql连接失败~');
+                } else {
+                    console.log('mysql连接成功~');
+                }
+            })
+        })*/
         return this.pool
     }
     /**
@@ -69,22 +88,9 @@ class mysqlHelper extends $sqlHelper {
      * 得到getConnection
      * @returns {Promise<Connection>}
      */
-    _getConnection () {
+    async _getConnection () {
         let self = this;
-        return new Promise((resolve, reject) => {
-            const start = new Date()
-            self.pool.getConnection(function (err, connection) {
-                const ms = new Date() - start
-                if (err) {
-                    $log4js.sqlErrLogger("创建连接池", "错误", err, ms)
-                    reject(err)
-                    return;
-                }
-                //console.log("mysql创建连接池成功！")
-                //$log4js.sqlInfoLogger("创建连接池", "成功", ms)
-                resolve(connection)
-            })
-        })
+        return await self.pool.getConnection()
     }
     /**
      * 执行sql语句，自己传pool对象
@@ -96,7 +102,7 @@ class mysqlHelper extends $sqlHelper {
      */
     async execSql (sql, params) {
         let self = this
-        let result = 0
+        let result = {}
         params = params || []
         await this.getConnection(async function (connection){
             result = await self.execSqlByConnection(connection, sql, params)
@@ -109,32 +115,24 @@ class mysqlHelper extends $sqlHelper {
      * 执行带事务的sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
-     * @returns {Promise<number>}
+     * @returns {Promise<boolean|object>}
      * @example
      * await $mysqlhelper.execTransactionSql("call sp_card_add()", [param.sfzh, param.xm])
      */
     async execTransactionSql(sql, params) {
-        let result = 0
+        let result = false
         let self = this;
+        let data = undefined
         await this.getConnectionByTransaction(async function (connection){
-            result = await self.execSqlByConnection(connection, sql, params)
+            data = await self.execSqlByConnection(connection, sql, params)
         })
-        /*let connection = await this._getConnection();
-        try {
-            await this._beginTransaction(connection);
-            result = await this.execSqlByConnection(connection, sql, params)
-            connection.commit((error) => {
-                if(error) {
-                    throw error;
-                    console.log('事务提交失败')
-                }
-            })
-        } catch (err) {
-            connection.rollback();
-            throw err
-        } finally {
-            this._pool.releaseConnection(connection)
-        }*/
+        //有的时候需要返回数据
+        if (_.isArray(data)){
+            return data
+        }
+        if (data&&data.affectedRows===1){
+            result = true
+        }
         return result;
     }
 
@@ -152,23 +150,17 @@ class mysqlHelper extends $sqlHelper {
      */
     async getConnectionByTransaction (fn) {
         let connection = await this._getConnection();
-        await this._beginTransaction(connection);
+        await connection.beginTransaction();
         try {
             if (fn){
                 await fn(connection)
             }
-            connection.commit((error) => {
-                if(error) {
-                    throw error;
-                    console.log('事务提交失败')
-                }
-            })
+            await connection.commit()
         } catch (err) {
             connection.rollback();
             throw err
         } finally {
-            this.pool.releaseConnection(connection)
-            //connection.release();
+            connection.release();
         }
     }
     async getConnection (fn) {
@@ -180,7 +172,8 @@ class mysqlHelper extends $sqlHelper {
         } catch (err) {
             throw err
         } finally {
-            this.pool.releaseConnection(connection)
+            // 释放连接
+            connection.release();
             //connection.release();
         }
     }
@@ -241,11 +234,11 @@ class mysqlHelper extends $sqlHelper {
         }
         return await this.execSql(sql);
     }
-    /**
+    /*/!**
      * 开启事务：
      * @param {Connection} connection
      * @returns {Promise<boolean>} 返回true成功，false失败
-     */
+     *!/
     _beginTransaction (connection){
         return new Promise((resolve, reject) => {
             connection.beginTransaction(err => {
@@ -255,7 +248,7 @@ class mysqlHelper extends $sqlHelper {
                 resolve(true)
             })
         })
-    }
+    }*/
     /**
      * 执行sql语句
      * @param {Connection} connection 连接对象
@@ -263,22 +256,19 @@ class mysqlHelper extends $sqlHelper {
      * @param {object[]} params sql参数
      * @returns {Promise<unknown>}
      */
-    execSqlByConnection (connection, sql, params) {
+    async execSqlByConnection (connection, sql, params) {
         const start = new Date()
         let sqlStr = this.getSqlStr(sql, params);
-        return new Promise((resolve, reject) => {
-            connection.query(sqlStr, params, (err, result) => {
-                //connection.release();
-                const ms = new Date() - start
-                if (err) {
-                    $log4js.sqlErrLogger(sqlStr, params, err, ms)
-                    reject(err)
-                    return;
-                }
-                $log4js.sqlInfoLogger(sqlStr, params, ms)
-                resolve(result)
-            })
-        })
+        try {
+            let [result] = await connection.query(sqlStr, params)
+            const ms = new Date() - start
+            $log4js.sqlInfoLogger(sqlStr, params, ms)
+            return result
+        }catch (err){
+            const ms = new Date() - start
+            $log4js.sqlErrLogger(sqlStr, params, err, ms)
+            throw err
+        }
     }
     /**
      * 设置group_concat_max_len为10240的大小
@@ -294,5 +284,5 @@ class mysqlHelper extends $sqlHelper {
         return await this.execSql(sql);
     }
 };
-module.exports = new mysqlHelper()
-module.exports.mysqlhelper = mysqlHelper
+module.exports = new mysql2Helper()
+module.exports.mysql2Helper = mysql2Helper

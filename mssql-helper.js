@@ -234,7 +234,7 @@ class mssqlhelper extends $sqlHelper  {
      * 得到getConnection
      * @returns {Promise<Connection>}
      */
-    async getConn() {
+    async _getConnection() {
         let self = this;
         return await self.pool.connect()
     }
@@ -250,8 +250,8 @@ class mssqlhelper extends $sqlHelper  {
         let self = this
         let result = 0
         params = params || []
-        await this.execByConnection(async function (connection){
-            result = await self.execSqlByConn(connection, sql, params)
+        await this.getConnection(async function (connection){
+            result = await self.execSqlByConnection(connection, sql, params)
         })
         return result;
     }
@@ -262,10 +262,10 @@ class mssqlhelper extends $sqlHelper  {
      * @param {object[]} params sql参数
      * @returns {Promise<object[]>}
      */
-    async execSqlByTransaction (sql, params=[]) {
+    async execTransactionSql(sql, params=[]) {
         let self = this
-        await self.execByTransaction(async function (transaction){
-            return await self.execSqlTransactionByTransaction(transaction, sql, params)
+        await self.getTransaction(async function (transaction){
+            return await self.execSqlByTransaction(transaction, sql, params)
         })
     }
     /**
@@ -273,17 +273,17 @@ class mssqlhelper extends $sqlHelper  {
      * @param {function} fn 返回的函数
      * @returns {Promise<void>}
      * @example
-     * await $sqlhelper.execByTransaction(async function(connection){
+     * await $mysqlhelper.getConnectionByTransaction(async function(connection){
             let userPkids = JSON.parse(param.userpkids);
             for (const userPkid of userPkids) {
-                await $sqlhelper.execSqlByConn(connection, "call sp_sysuserrole_add()", [userPkid, param.cd_sysrole_pkid])
+                await $mysqlhelper.execSqlByConnection(connection, "call sp_sysuserrole_add()", [userPkid, param.cd_sysrole_pkid])
             }
         })
      */
-    async execByTransaction (fn) {
+    async getTransaction (fn) {
         let self = this
         try {
-            let connection = await self.getConn()
+            let connection = await self._getConnection()
             const transaction = new mssql.Transaction(connection)
             try {
                 await transaction.begin()
@@ -307,7 +307,7 @@ class mssqlhelper extends $sqlHelper  {
      * @param {object[]} params sql参数
      * @returns {Promise<object>}
      */
-    async execSqlTransactionByTransaction (transaction, sql, params) {
+    async execSqlByTransaction (transaction, sql, params) {
         let self = this
         const start = new Date()
         let ms = 0
@@ -322,8 +322,8 @@ class mssqlhelper extends $sqlHelper  {
         return result
     }
     //==========================================================================
-    async execByConnection (fn) {
-        let connection = await this.getConn();
+    async getConnection (fn) {
+        let connection = await this._getConnection();
         try {
             if (fn){
                 await fn(connection)
@@ -341,14 +341,14 @@ class mssqlhelper extends $sqlHelper  {
      * @param {object[]} params sql参数
      * @returns {Promise<unknown>}
      */
-    async execSqlByConn (connection, sql, params) {
+    async execSqlByConnection (connection, sql, params) {
         let self = this
         const start = new Date()
         let ms = 0
         let result = {}
         try {
             sql = self.getSqlStr(sql)
-            let connection = await self.getConn()
+            let connection = await self._getConnection()
             let request = new mssql.Request(connection)
             request.multiple = true
             if (params) {
@@ -375,7 +375,7 @@ class mssqlhelper extends $sqlHelper  {
         params = params || []
         try {
             let rsParams = await this._getProcedureParameters(procedureName)
-            let connection = await self.getConn()
+            let connection = await self._getConnection()
             let request = new mssql.Request(connection)
             if ($util.isNotEmpty(rsParams)) {
                 //输入的参数个数

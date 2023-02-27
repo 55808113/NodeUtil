@@ -50,7 +50,7 @@ class mssqlhelper {
      * 得到getConnection
      * @returns {Promise<Connection>}
      */
-    getConn() {
+    _getConnection() {
         return new Promise((resolve, reject) => {
             let connection = new Connection(this._config);
             connection.connect(function (err) {
@@ -104,13 +104,13 @@ class mssqlhelper {
         let self = this
         let result = 0
         params = params || []
-        await this.execByConnection(async function (connection){
-            result = await self.execSqlByConn(connection, sql, params)
+        await this.getConnection(async function (connection){
+            result = await self.execSqlByConnection(connection, sql, params)
         })
         return result;
     }
-    async execByConnection(fn){
-        let connection = await this.getConn();
+    async getConnection(fn){
+        let connection = await this._getConnection();
         try {
             if (fn){
                 await fn(connection)
@@ -127,11 +127,11 @@ class mssqlhelper {
      * @param {object[]} params sql参数
      * @returns {Promise<object[]>}
      */
-    async execSqlByTransaction (sql, params=[]) {
+    async execTransactionSql(sql, params=[]) {
         let result = 0
         params = params || []
         try {
-            let connection = await this.getConn();
+            let connection = await this._getConnection();
             try {
                 result = await this.execSqlTransactionByConn(connection, sql, params)
             } catch (err) {
@@ -154,7 +154,7 @@ class mssqlhelper {
         let result = 0
         params = params || []
         try {
-            let connection = await this.getConn();
+            let connection = await this._getConnection();
             try {
                 result = await this.execProcedureByConn(connection, sql, params)
             } catch (err) {
@@ -371,7 +371,7 @@ class mssqlhelper {
      * @param {object[]} params sql参数
      * @returns {Promise<object>}
      */
-    execSqlByConn (connection, sql, params) {
+    execSqlByConnection (connection, sql, params) {
         const start = new Date()
         let self = this
         return new Promise((resolve, reject) => {
@@ -464,7 +464,7 @@ class mssqlhelper {
             AND ISNULL( sp.is_ms_shipped, 0 ) = 0
             AND ISNULL( E.name, '' ) <> 'microsoft_database_tools_support'
             ORDER BY sp.name , param.parameter_id ASC;`
-            return await self.execSqlByConn(connection,sql,[ProcedureName])
+            return await self.execSqlByConnection(connection,sql,[ProcedureName])
         }
         /**
          * 得到参数的实际类型

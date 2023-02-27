@@ -84,9 +84,9 @@ class oraclehelper extends $sqlHelper {
     /**
      * 得到getConnection
      * @param {string} poolAlias 连接池别名
-     * @returns {Promise<connection>}
+     * @returns {Promise<Connection>}
      */
-    async getConn (poolAlias) {
+    async _getConnection (poolAlias) {
         try{
             let connection
             if (poolAlias)
@@ -110,11 +110,11 @@ class oraclehelper extends $sqlHelper {
     async querySqlPool (poolAlias, sql, params) {
         let result = [];
         try {
-            let connection = await this.getConn(poolAlias);
+            let connection = await this._getConnection(poolAlias);
             try {
                 //第一个参数是游标参数需要设置一下
                 params.splice(0,0,{ type: oracle.CURSOR, dir: oracle.BIND_OUT  });
-                let data = await this.execSqlByConn(connection, sql, params)
+                let data = await this.execSqlByConnection(connection, sql, params)
                 //得到游标返回的记录集
                 const resultSet = data.outBinds[0];
                 //得到字符的名称
@@ -153,9 +153,9 @@ class oraclehelper extends $sqlHelper {
     async execSqlPool (poolAlias, sql, params) {
         let result = 0
         try {
-            let connection = await this.getConn(poolAlias);
+            let connection = await this._getConnection(poolAlias);
             try {
-                result = await this.execSqlByConn(connection, sql, params)
+                result = await this.execSqlByConnection(connection, sql, params)
             } catch (err) {
                 throw err
             } finally {
@@ -176,9 +176,9 @@ class oraclehelper extends $sqlHelper {
     async execSqlByTransactionPool (poolAlias, sql, params) {
         let result = 0
         try {
-            let connection = await this.getConn(poolAlias);
+            let connection = await this._getConnection(poolAlias);
             try {
-                result = await this.execSqlByConn(connection, sql, params)
+                result = await this.execSqlByConnection(connection, sql, params)
                 //提交事务
                 await connection.commit();
             } catch (err) {
@@ -199,7 +199,7 @@ class oraclehelper extends $sqlHelper {
      * @param {object[]} [params] sql参数
      * @returns {Promise<unknown>}
      */
-    async execSqlByConn (connection, sql, params) {
+    async execSqlByConnection (connection, sql, params) {
         let sqlStr = this.getSqlStr(sql, params);
         let result = await connection.execute(sqlStr, params);
         return result;
@@ -228,7 +228,7 @@ class oraclehelper extends $sqlHelper {
      * @param {object[]} params
      * @returns {Promise<number>}
      */
-    async execSqlByTransaction (sql, params) {
+    async execTransactionSql(sql, params) {
         return await this.execSqlByTransactionPool("", sql, params);
     }
 };

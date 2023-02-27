@@ -36,7 +36,7 @@ class sqlHelper {
         return null;
     }
 
-    async execByConnection(fn){
+    async getConnection(fn){
 
     }
 
@@ -48,7 +48,7 @@ class sqlHelper {
      * @param {object[]} params sql参数
      * @returns {Promise<object>}
      */
-    execSqlByConn (connection, sql, params) {
+    execSqlByConnection (connection, sql, params) {
 
     }
 

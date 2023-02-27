@@ -175,6 +175,10 @@ class convert {
      * @returns {JSON|null} 返回JSON对象
      */
     strToJson (str) {
+        //如果是对象直接返回
+        if (str instanceof Object){
+            return str
+        }
         if (!$util.isEmpty(str) && str != 0) {
             try {
                 return JSON.parse(str);
