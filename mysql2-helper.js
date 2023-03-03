@@ -120,7 +120,7 @@ class mysql2Helper extends $sqlHelper {
      * await $mysqlhelper.execTransactionSql("call sp_card_add()", [param.sfzh, param.xm])
      */
     async execTransactionSql(sql, params) {
-        let result = false
+        let result = true
         let self = this;
         let data = undefined
         await this.getConnectionByTransaction(async function (connection){
@@ -130,9 +130,9 @@ class mysql2Helper extends $sqlHelper {
         if (_.isArray(data)){
             return data
         }
-        if (data&&data.affectedRows===1){
+        /*if (data&&data.affectedRows===1){
             result = true
-        }
+        }*/
         return result;
     }
 
