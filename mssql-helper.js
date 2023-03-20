@@ -62,7 +62,7 @@ class mssqlhelper extends $sqlHelper  {
             let value = params[i]
             switch (typeof value) {
                 case "number":
-                    let options = mssql.Numeric
+                    let options = mssql.TYPES.Numeric()
                     //让数据为小数。
                     if (!_.isInteger(value)){
                         options.scale = 2
@@ -70,12 +70,12 @@ class mssqlhelper extends $sqlHelper  {
                     request.input(param_name, options, value);
                     break;
                 case "string":
-                    request.input(param_name, mssql.NVarChar, value);
+                    request.input(param_name, mssql.TYPES.NVarChar, value);
                     break;
                 case "boolean":
                     break;
                 default:
-                    request.input(param_name, mssql.NVarChar, value);
+                    request.input(param_name, mssql.TYPES.NVarChar, value);
                     break;
             }
         }
@@ -131,100 +131,100 @@ class mssqlhelper extends $sqlHelper  {
      * @private
      */
     _getParametersType(parametersType){
-        let result = mssql.NVarChar
+        let result = mssql.TYPES.NVarChar
         switch (parametersType) {
             case 'tinyint':
-                result = mssql.TinyInt
+                result = mssql.TYPES.TinyInt
                 break;
             case 'bit':
-                result = mssql.Bit
+                result = mssql.TYPES.Bit
                 break;
             case 'smallint':
-                result = mssql.SmallInt
+                result = mssql.TYPES.SmallInt
                 break;
             case 'int':
-                result = mssql.Int
+                result = mssql.TYPES.Int
                 break;
             case 'smalldatetime':
-                result = mssql.SmallDateTime
+                result = mssql.TYPES.SmallDateTime
                 break;
             case 'real':
-                result = mssql.Real
+                result = mssql.TYPES.Real
                 break;
             case 'money':
-                result = mssql.Money
+                result = mssql.TYPES.Money
                 break;
             case 'datetime':
-                result = mssql.DateTime
+                result = mssql.TYPES.DateTime
                 break;
             case 'float':
-                result = mssql.Float
+                result = mssql.TYPES.Float
                 break;
             case 'decimal':
-                result = mssql.Decimal
+                result = mssql.TYPES.Decimal
                 break;
             case 'numeric':
-                result = mssql.Numeric
+                result = mssql.TYPES.Numeric
                 break;
             case 'smallmoney':
-                result = mssql.SmallMoney
+                result = mssql.TYPES.SmallMoney
                 break;
             case 'bigint':
-                result = mssql.BigInt
+                result = mssql.TYPES.BigInt
                 break;
             case 'image':
-                result = mssql.Image
+                result = mssql.TYPES.Image
                 break;
             case 'text':
-                result = mssql.Text
+                result = mssql.TYPES.Text
                 break;
             case 'uniqueIdentifier':
-                result = mssql.UniqueIdentifier
+                result = mssql.TYPES.UniqueIdentifier
                 break;
             case 'ntext':
-                result = mssql.NText
+                result = mssql.TYPES.NText
                 break;
             case 'varbinary':
-                result = mssql.VarBinary
+                result = mssql.TYPES.VarBinary
                 break;
             case 'varchar':
-                result = mssql.VarChar
+                result = mssql.TYPES.VarChar
                 break;
             case 'binary':
-                result = mssql.Binary
+                result = mssql.TYPES.Binary
                 break;
             case 'char':
-                result = mssql.Char
+                result = mssql.TYPES.Char
                 break;
             case 'nvarchar':
-                result = mssql.NVarChar
+                result = mssql.TYPES.NVarChar
                 break;
             case 'nchar':
-                result = mssql.NChar
+                result = mssql.TYPES.NChar
                 break;
             case 'xml':
-                result = mssql.Xml
+                result = mssql.TYPES.Xml
                 break;
             case 'time':
-                result = mssql.Time
+                result = mssql.TYPES.Time
                 break;
             case 'date':
-                result = mssql.Date
+                result = mssql.TYPES.Date
                 break;
             case 'datetime2':
-                result = mssql.DateTime2
+                result = mssql.TYPES.DateTime2
                 break;
             case 'datetimeoffset':
-                result = mssql.DateTimeOffset
+                result = mssql.TYPES.DateTimeOffset
                 break;
             case 'udt':
-                result = mssql.UDT
+                result = mssql.TYPES.UDT
                 break;
             case 'tvp':
-                result = mssql.TVP
+                result = mssql.TYPES.TVP
                 break;
             case 'variant':
-                result = mssql.Variant
+                result = mssql.TYPES.Variant
                 break;
         }
         return result
