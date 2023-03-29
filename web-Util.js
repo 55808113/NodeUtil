@@ -52,7 +52,7 @@ module.exports = {
      * @param {object} headers 头文件信息
      * @returns {Promise<*>}
      */
-    reqJsonData: async function (url, params = {}, method = 'get', headers = {}) {
+    _reqJsonData: async function (url, params = {}, method = 'get', headers = {}) {
         let responseData, apiData = [];
         if (method === 'get') {
             responseData = await Axios.get(url, {
@@ -68,5 +68,23 @@ module.exports = {
         } else {
             throw new Error(responseData.data.message);
         }
+    },
+    /**
+     * nodejs 通过get访问网络资源的函数
+     * @param {string} url 路径
+     * @param {object} headers 头文件信息
+     * @returns {Promise<*>}
+     */
+    getJsonData:async function (url, params = {}, headers = {}) {
+        return await this._reqJsonData(url,params,"get",headers)
+    },
+    /**
+     * nodejs 通过post访问网络资源的函数
+     * @param {string} url 路径
+     * @param {object} headers 头文件信息
+     * @returns {Promise<*>}
+     */
+    postJsonData:async function (url, params = {}, headers = {}) {
+        return await this._reqJsonData(url,params,"post",headers)
     }
 };
