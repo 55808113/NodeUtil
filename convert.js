@@ -65,6 +65,38 @@ class convert {
         }
     }
     /**
+     * 转换json的日期。因为有2023-01-01T00:10:11有T所以要去掉T
+     * @param val
+     * @param defaultvalue
+     * @returns {null|Date}
+     */
+    getJsonDate (val, defaultvalue = null) {
+        if ($util.isEmpty(val)){
+            return defaultvalue;
+        }else{
+            let arr;
+            if (val.indexOf("T") != -1) {
+                arr = val.split("T");
+            } else {
+                //nodejs时日期格式是2012-11-11 11:11:11
+                arr = val.split(" ");
+            }
+            return arr[0];
+        }
+    }
+    /**
+     * 转换json的日期时间格式。因为有2023-01-01T00:10:11有T所以要去掉T
+     * @param val
+     * @param defaultvalue
+     * @returns {null|Date}
+     */
+    getJsonDateTime (val, defaultvalue = null) {
+        if ($util.isEmpty(val))
+            return defaultvalue;
+        else
+            return val.replace('T', ' ');
+    }
+    /**
      * 得到数字。如果为空根据默认值返回
      * @param {number} val 值
      * @param {number} [defaultvalue] 默认值
