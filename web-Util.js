@@ -55,15 +55,23 @@ module.exports = {
     _reqJsonData: async function (url, params = {}, method = 'get', headers = {}) {
         let responseData, apiData = [];
         if (method === 'get') {
+
             responseData = await Axios.get(url, {
                 params: params,
                 headers: headers
             })
+
+            /*console.log("url:"+url)
+            console.log("config:"+JSON.stringify({
+                params: params,
+                headers: headers
+            }))
+            console.log("responseData:"+responseData)*/
         } else if (method === 'post') {
             responseData = await Axios.post(url, params, {headers:headers})
         }
 
-        if (responseData && responseData.status == 200 && !_.isEmpty(responseData.data) && responseData.data.status == 200) {
+        if (responseData && responseData.status == 200 && !_.isEmpty(responseData.data)) {
             return responseData.data;
         } else {
             throw new Error(responseData.data.message);
