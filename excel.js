@@ -305,7 +305,7 @@ class excel {
                     item.content = []
                     for (let i in item.templaterows) {
                         let templates = item.templaterows[i]
-                        let content = JSON.parse(templates.content);
+                        let content = $convert.strToJson(templates.content);
                         item.content = item.content.concat(content)
                     }
                     item.content.forEach(function (n) {
@@ -343,7 +343,7 @@ class excel {
                 for (let item of headers) {
                     let val = row[item.name]
                     if (item.type == "json") {
-                        let dataObj = JSON.parse(val)
+                        let dataObj = $convert.strToJson(val)
                         for (let n of item.content) {
                             let value = ""
                             if (!_.isEmpty(dataObj)) {
@@ -595,9 +595,20 @@ class excel {
             }
             return result
         }
+        /**
+         * 执行sql命令
+         */
+        async function execSql(connection, param){
+            if ($util.isEmpty(options.sqlFunction)){
+                await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, param)
+            }else{
+                await options.sqlFunction.call(self,connection,param)
+            }
+        }
         let options = {
             sql:"",
             sqlType: $sqlHelper.SQL_TYPE.MYSQL,//0:mysql,1:mssql
+            sqlFunction:null,//执行的sql的过程函数。function(connection,param)
             //上传文件成功事件:让程序取得一些参数
             onUploadFileSuccess: async function (ctx){
 
@@ -612,11 +623,12 @@ class excel {
 
             }
         }
+        let self = this
         options = _.assign({},options,opts)
         let filepath = this.options.impFailpath
         let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
 
-        await options.onUploadFileSuccess.call(this,ctx)
+        await options.onUploadFileSuccess.call(self,ctx)
         let rows = xlsxDatatoJson(uploaddata)
         let failInfos = []
         let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
@@ -632,10 +644,10 @@ class excel {
                     //如果返回数组代表是一下导入多条数据。
                     if (_.isArray(param[0])){
                         for (const paramElement of param) {
-                            await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, paramElement)
+                            await execSql(connection, paramElement)
                         }
                     }else{
-                        await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, param)
+                        await execSql(connection, param)
                     }
                     resultInfo.success = resultInfo.success + 1;
                 } catch (err) {

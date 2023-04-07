@@ -9,14 +9,14 @@ const $util = require('./util')
 class convert {
     /**
      * 向前台返回JSON方法的简单封装
-     * @param {boolean} val 值
+     * @param {string|boolean|number} val 值
      * @param {boolean} defaultvalue 默认值
      * @returns {boolean}
      */
     getBool (val, defaultvalue = false) {
         if ($util.isEmpty(val))
             return defaultvalue
-        else if (val === true || _.lowerCase(val) === "true" || val === 1 || val === "1")
+        else if (val === true || _.lowerCase(val) === "true" || val === 1 || val === "1" || val === "是")
             return true
         else
             return false
