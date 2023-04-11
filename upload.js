@@ -14,7 +14,9 @@ module.exports = {
         /**
          * 上传的路径可以默认设置 $conf.configuration.photopath;
          */
-        uploadpath: path.join(process.cwd(), '/upload/upload')
+        uploadpath: path.join(process.cwd(), '/upload/upload'),
+        //导入的文件名保存在body里的名称
+        importFilename:"importFilename"
     },
     init: function (opts){
         _.assign(this.options,opts)
@@ -78,6 +80,7 @@ module.exports = {
      * @returns {Promise<unknown>}
      */
     uploadfile(ctx,extArr='*') {
+        let opts = this.options
         let uploadData = null;
         return new Promise((resolve, reject) => {
             const _emmiter = new Busboy({headers: ctx.req.headers})
@@ -105,6 +108,8 @@ module.exports = {
                 });
                 file.on('end', function () {
                     if (filename !== "" && uploadData) {
+                        //
+                        ctx.request.body[opts.importFilename] = filename
                         resolve(uploadData)
                     } else {
                         reject("上传文件不存在！")

@@ -124,6 +124,17 @@ class excel {
         return result;
     }
     /**
+     * 得到导入的文件路径
+     * @param filepath
+     */
+    getImpFilePath(filepath){
+        return path.join($upload.options.uploadpath,filepath)
+    }
+    getImpFailpath(filepath){
+        let opts = this.options
+        return path.join(opts.impFailpath,filepath)
+    }
+    /**
      * mysql的类型转换为excel的类型
      * @param datatype
      */
@@ -609,8 +620,14 @@ class excel {
             sql:"",
             sqlType: $sqlHelper.SQL_TYPE.MYSQL,//0:mysql,1:mssql
             sqlFunction:null,//执行的sql的过程函数。function(connection,param)
-            //上传文件成功事件:让程序取得一些参数
-            onUploadFileSuccess: async function (ctx){
+            /**
+             * 上传文件成功事件:让程序取得一些参数
+             * @param ctx let bodyParam = ctx.request.body 得到相关上传的参数
+             * @param uploadFilename 上传的文件名称
+             * @param uploaddata 上传的文件数据。可能通过bodyParam.file得到文件名。再通过$file.writeFile(uploadFilename,uploaddata)
+             * @returns {Promise<void>}
+             */
+            onUploadFileSuccess: async function (ctx,uploadFilename,uploaddata){
 
             },
             /**
@@ -621,17 +638,31 @@ class excel {
              */
             onSetParams:async function (item,bodyParam){
 
+            },
+            /**
+             * 导入失败的文件
+             * @param uploadFilename 上传的文件名。
+             * @param failFilename 失败的文件名。
+             * @returns {Promise<void>}
+             */
+            onImportFail:async function (uploadFilename, failFilename){
+
             }
         }
         let self = this
         options = _.assign({},options,opts)
-        let filepath = this.options.impFailpath
+        let failfilepath = this.options.impFailpath
         let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
-
-        await options.onUploadFileSuccess.call(self,ctx)
+        //得到上传的文件名
+        let uploadFilename = ctx.request.body[$upload.options.importFilename]
+        await options.onUploadFileSuccess.call(self,ctx,uploadFilename,uploaddata)
         let rows = xlsxDatatoJson(uploaddata)
         let failInfos = []
-        let resultInfo = {success: 0, fail: 0, failfilename: $file.UUIDFileName("err.xlsx")}
+        let resultInfo = {
+            success: 0,
+            fail: 0,
+            failfilename: $file.UUIDFileName("err.xlsx")
+        }
         await getSqlhelper(options.sqlType).getConnection(async function(connection){
             for (let i = 0; i < rows.length; i++) {
                 let item = rows[i];
@@ -662,7 +693,7 @@ class excel {
         //如果有错误的话。把错误信息保存到本地让客户下载
         if (resultInfo.fail > 0) {
 
-            $file.createFolder(filepath)
+            $file.createFolder(failfilepath)
 
             let headers = {};
             let failinfo = failInfos[0];
@@ -673,7 +704,8 @@ class excel {
                 }
             }
             let excelStream = this.expExcelStream(headers, failInfos, null, "错误信息")
-            $file.writeFile(path.join(filepath, resultInfo.failfilename), excelStream)
+            $file.writeFile(path.join(failfilepath, resultInfo.failfilename), excelStream)
+            await options.onImportFail.call(this, uploadFilename, resultInfo.failfilename)
         }
         return resultInfo
     }
