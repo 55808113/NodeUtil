@@ -134,6 +134,30 @@ class excel {
         let opts = this.options
         return path.join(opts.impFailpath,filepath)
     }
+    _getTime(numb){
+        //return new Date( (numb - 25567) * 24 * 3600000  - 5 * 60 * 1000 - 43 * 1000 - 24 * 6 * 60 * 1000 - 8 * 3600000 )
+        return new Date(((Number(numb) - 70 * 365 - 19) * 24 * 3600 + 0.5 - 8 * 3600) * 1000)
+    }
+    /**
+     * 因为时间返回的是数字。所以需要转换
+     * @param numb 日期的数字值
+     * @param format
+     * @returns {string}
+     */
+    convertDate(numb) {
+        const time = this._getTime(numb)
+        return $convert.getDateString(time)
+    }
+    /**
+     * 因为时间返回的是数字。所以需要转换
+     * @param numb 日期的数字值
+     * @param format
+     * @returns {string}
+     */
+    convertDateTime(numb) {
+        const time = this._getTime(numb)
+        return $convert.getDateTimeString(time)
+    }
     /**
      * mysql的类型转换为excel的类型
      * @param datatype
@@ -572,6 +596,7 @@ class excel {
             let sheetNames = workbook.SheetNames; // 返回 ['sheet1', 'sheet2',……]
             let worksheet = workbook.Sheets[sheetNames[0]];// 获取excel的第一个表格
             //defval添加这个可以可以让值为空的列导出来
+            //rawNumbers:false 设置为false时所有数字或者时间都返回字符串
             return xlsx.utils.sheet_to_json(worksheet,{defval:null});
         }
         //转换为导出模板的类型
@@ -606,6 +631,7 @@ class excel {
             }
             return result
         }
+
         /**
          * 执行sql命令
          */
