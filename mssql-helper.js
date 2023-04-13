@@ -248,7 +248,7 @@ class mssqlhelper extends $sqlHelper  {
      */
     async execSql (sql, params= []) {
         let self = this
-        let result = 0
+        let result = {}
         params = params || []
         await this.getConnection(async function (connection){
             result = await self.execSqlByConnection(connection, sql, params)
@@ -263,10 +263,17 @@ class mssqlhelper extends $sqlHelper  {
      * @returns {Promise<object[]>}
      */
     async execTransactionSql(sql, params=[]) {
+        let result = true
         let self = this
+        let data = undefined
         await self.getTransaction(async function (transaction){
-            return await self.execSqlByTransaction(transaction, sql, params)
+            data = await self.execSqlByTransaction(transaction, sql, params)
         })
+        //有的时候需要返回数据
+        if (_.isArray(data)){
+            return data
+        }
+        return result;
     }
     /**
      * 执行事务的函数
@@ -367,6 +374,8 @@ class mssqlhelper extends $sqlHelper  {
      * @param {string} sql sql语句
      * @param {object[]} param sql参数
      * @returns {Promise<number>}
+     * @example
+     *  execProcedure("sp_GJ_PersonInfos_upd",[])
      */
     async execProcedure (procedureName, params) {
         let result = 0
@@ -380,8 +389,10 @@ class mssqlhelper extends $sqlHelper  {
                 //输入的参数个数
                 let paramInputlength = 0
                 for (let i = 0; i < rsParams.length; i++) {
-                    let param = params[i]
                     let rsparam = rsParams[i]
+					//当没有参数时也返回一条数据。根据ParamName是否存在来判断
+                    if ($util.isEmpty(rsparam.ParamName)) break;
+                    let param = params[i]
                     let paramType = this._getParametersType(rsparam.DataType)
                     let paramName = rsparam.ParamName.replace("@","")
                     if (rsparam.ParamType == "IN"){

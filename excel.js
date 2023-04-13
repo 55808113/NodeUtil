@@ -580,7 +580,7 @@ class excel {
     /**
      * 导入excel文件
      * @param {object} ctx
-     * @param {{sql: string, onUploadFileSuccess: function, onSetParams:function}} opts  sql语句
+     * @param {{sql: string,sqlFunction: function, onUploadFileSuccess: function, onSetParams:function, onImportFail: function}} opts  sql语句
      * @returns {Promise<{{fail: number, success: number, failfilename: string}}>}
      * @example
      * {
@@ -635,11 +635,11 @@ class excel {
         /**
          * 执行sql命令
          */
-        async function execSql(connection, param){
+        async function execSql(connection, params){
             if ($util.isEmpty(options.sqlFunction)){
-                await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, param)
+                await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, params)
             }else{
-                await options.sqlFunction.call(self,connection,param)
+                await options.sqlFunction.call(self,connection,params)
             }
         }
         let options = {
@@ -694,17 +694,17 @@ class excel {
                 let item = rows[i];
                 try {
                     let bodyParam = ctx.request.body
-                    let param = await options.onSetParams.call(this,item,bodyParam)
-                    if (!param||param.length==0) {
+                    let params = await options.onSetParams.call(this,item,bodyParam)
+                    if (!params||params.length==0) {
                         throw "callbackParam参数没有设置插入的数据！"
                     }
                     //如果返回数组代表是一下导入多条数据。
-                    if (_.isArray(param[0])){
-                        for (const paramElement of param) {
+                    if (_.isArray(params[0])){
+                        for (const paramElement of params) {
                             await execSql(connection, paramElement)
                         }
                     }else{
-                        await execSql(connection, param)
+                        await execSql(connection, params)
                     }
                     resultInfo.success = resultInfo.success + 1;
                 } catch (err) {
