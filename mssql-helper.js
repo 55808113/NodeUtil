@@ -289,21 +289,16 @@ class mssqlhelper extends $sqlHelper  {
      */
     async getTransaction (fn) {
         let self = this
+        let connection = await self._getConnection()
+        const transaction = new mssql.Transaction(connection)
         try {
-            let connection = await self._getConnection()
-            const transaction = new mssql.Transaction(connection)
-            try {
-                await transaction.begin()
-                if (fn){
-                    await fn(transaction)
-                }
-                await transaction.commit()
-            } catch (err) {
-                await transaction.rollback()
-                throw err
+            await transaction.begin()
+            if (fn){
+                await fn(transaction)
             }
+            await transaction.commit()
         } catch (err) {
-            $log4js.sqlErrLogger("", params, err, ms)
+            await transaction.rollback()
             throw err
         }
     }
@@ -315,18 +310,23 @@ class mssqlhelper extends $sqlHelper  {
      * @returns {Promise<object>}
      */
     async execSqlByTransaction (transaction, sql, params) {
-        let self = this
-        const start = new Date()
-        let ms = 0
-        sql = self.getSqlStr(sql)
-        const request = new mssql.Request(transaction)
-        if (params) {
-            self._setParams(request, params)
+        try {
+            let self = this
+            const start = new Date()
+            let ms = 0
+            sql = self.getSqlStr(sql)
+            const request = new mssql.Request(transaction)
+            if (params) {
+                self._setParams(request, params)
+            }
+            let result = await request.query(sql);
+            ms = new Date() - start
+            $log4js.sqlInfoLogger(sql, params, ms)
+            return result
+        } catch (err) {
+            $log4js.sqlErrLogger(sql, params, err)
+            throw err
         }
-        let result = await request.query(sql);
-        ms = new Date() - start
-        $log4js.sqlInfoLogger(sql, params, ms)
-        return result
     }
     //==========================================================================
     async getConnection (fn) {

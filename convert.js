@@ -65,6 +65,19 @@ class convert {
         }
     }
     /**
+     * MsSql数据库的得到日期类型
+     * @param {Date} val 值
+     * @param {Date} defaultvalue 默认值
+     * @returns {Date|null|*}
+     */
+    getDate_MsSql (val, defaultvalue = null) {
+        if (!dayjs(val).isValid())
+            return defaultvalue;
+        else{
+            return val;
+        }
+    }
+    /**
      * 转换json的日期。因为有2023-01-01T00:10:11有T所以要去掉T
      * @param val
      * @param defaultvalue
