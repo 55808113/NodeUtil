@@ -2,7 +2,6 @@
 const dayjs = require('dayjs');
 const _ = require('lodash')
 const $util = require('./util')
-
 /**
  相关转换函数
  */
@@ -20,6 +19,19 @@ class convert {
             return true
         else
             return false
+    }
+    /**
+     * 数据库bool转换为number
+     * @param val
+     * @param defaultvalue
+     * @returns {number}
+     */
+    getBoolNumber (val, defaultvalue = 0) {
+        var result = defaultvalue
+        if(this.getBool(val)){
+            result = 1
+        }
+        return result
     }
     /**
      * 得到对象
@@ -66,16 +78,37 @@ class convert {
     }
     /**
      * MsSql数据库的得到日期类型
-     * @param {Date} val 值
-     * @param {Date} defaultvalue 默认值
-     * @returns {Date|null|*}
+     * @param {string|number} val 值
+     * @param {string} defaultvalue 默认值
+     * @returns {string|null|*}
      */
     getDate_MsSql (val, defaultvalue = null) {
-        if (!dayjs(val).isValid())
-            return defaultvalue;
-        else{
-            return val;
+        let result = defaultvalue
+        if (_.isNumber(val)){
+            result = this.excelDateToString(val)
+        }else{
+            if (dayjs(val).isValid()){
+                result = val;
+            }
         }
+        return result
+    }
+    /**
+     * MsSql数据库的得到时间类型
+     * @param {string|number} val 值
+     * @param {string} defaultvalue 默认值
+     * @returns {string|null|*}
+     */
+    getDateTime_MsSql (val, defaultvalue = null) {
+        let result = defaultvalue
+        if (_.isNumber(val)){
+            result = this.excelDateTimeToString(val)
+        }else{
+            if (dayjs(val).isValid()){
+                result = val;
+            }
+        }
+        return result
     }
     /**
      * 转换json的日期。因为有2023-01-01T00:10:11有T所以要去掉T
@@ -150,7 +183,7 @@ class convert {
      * 得到MS毫秒转换为分和小时的格式：xxMS xx秒 xx分
      * @param val
      */
-    getDateByMSString(val){
+    getDateMSString(val){
         let sizes = ['ms','s','min','h'];
         if ($util.isEmpty(val)) return 'n/a';
         let result = ""
@@ -327,6 +360,41 @@ class convert {
         } else {
             return color;
         }
+    }
+
+    /**
+     *
+     * @param numb
+     * @returns {Date}
+     * @private
+     */
+    _getTime(value){
+        //return new Date( (numb - 25567) * 24 * 3600000  - 5 * 60 * 1000 - 43 * 1000 - 24 * 6 * 60 * 1000 - 8 * 3600000 )
+        return new Date(((Number(value) - 70 * 365 - 19) * 24 * 3600 + 0.5 - 8 * 3600) * 1000)
+    }
+    /**
+     * 因为excel日期返回的是数字。所以需要转换
+     * @param {number} numb 日期的数字值
+     * @returns {string}
+     */
+    excelDateToString(value) {
+        if (!_.isNumber(value)){
+            return value
+        }
+        const time = this._getTime(value)
+        return this.getDateString(time)
+    }
+    /**
+     * 因为excel时间返回的是数字。所以需要转换
+     * @param {number} numb 日期的数字值
+     * @returns {string}
+     */
+    excelDateTimeToString(value) {
+        if (!_.isNumber(value)){
+            return value
+        }
+        const time = this._getTime(value)
+        return this.getDateTimeString(time)
     }
 };
 

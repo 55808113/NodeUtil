@@ -134,30 +134,6 @@ class excel {
         let opts = this.options
         return path.join(opts.impFailpath,filepath)
     }
-    _getTime(numb){
-        //return new Date( (numb - 25567) * 24 * 3600000  - 5 * 60 * 1000 - 43 * 1000 - 24 * 6 * 60 * 1000 - 8 * 3600000 )
-        return new Date(((Number(numb) - 70 * 365 - 19) * 24 * 3600 + 0.5 - 8 * 3600) * 1000)
-    }
-    /**
-     * 因为时间返回的是数字。所以需要转换
-     * @param numb 日期的数字值
-     * @param format
-     * @returns {string}
-     */
-    convertDate(numb) {
-        const time = this._getTime(numb)
-        return $convert.getDateString(time)
-    }
-    /**
-     * 因为时间返回的是数字。所以需要转换
-     * @param numb 日期的数字值
-     * @param format
-     * @returns {string}
-     */
-    convertDateTime(numb) {
-        const time = this._getTime(numb)
-        return $convert.getDateTimeString(time)
-    }
     /**
      * mysql的类型转换为excel的类型
      * @param datatype
