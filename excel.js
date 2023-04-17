@@ -189,11 +189,11 @@ class excel {
      * @returns {{}}
      * @example
      let headers = {};
-     headers.sfzh = $message.card.sfzh;
-     headers.xm = $message.card.xm;
-     headers.xb = $message.card.xb;
+     headers.sfzh = $message.card.columns.sfzh;
+     headers.xm = $message.card.columns.xm;
+     headers.xb = $message.card.columns.xb;
      let headers = [];
-     headers.push({name:"sfzh",value:$message.card.sfzh});
+     headers.push({name:"sfzh",value:$message.card.columns.sfzh});
      $excel.getConfig(headers, rows, "");
      */
     getConfig (headerObj, rows, mergeCells, sheetTitle){
@@ -493,9 +493,9 @@ class excel {
      * @param {string} [sheetTitle] sheet标题
      * @example
      let headers = {};
-     headers.sfzh = $message.card.sfzh;
-     headers.xm = $message.card.xm;
-     headers.xb = $message.card.xb;
+     headers.sfzh = $message.card.columns.sfzh;
+     headers.xm = $message.card.columns.xm;
+     headers.xb = $message.card.columns.xb;
      $excel.expExcel(ctx, $message.card.title, headers, rows);
      */
     expExcel (ctx, title, headerObj, rows, mergeCells, sheetTitle) {
