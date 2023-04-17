@@ -17,55 +17,92 @@ const $sqlHelper = require('./sql-helper')
 const $mysqlhelper = require('./mysql2-helper')
 const $mssqlhelper = require('./mssql-helper')
 //const $oraclehelper = require('./oracle-helper')
-
+/**
+ * 数据类型
+ * @type {{}}
+ */
+const DATA_TYPE = {
+    /**
+     * JSON的类型
+     */
+    json:"json",
+    /**
+     * 字符串类型
+     */
+    string:"string",
+    /**
+     * 数值类型
+     */
+    number:"number",
+    /**
+     * bool类型
+     */
+    bool:"bool",
+    /**
+     * 日期类型
+     */
+    date:"date",
+    /**
+     * 时间类型
+     */
+    datetime:"datetime",
+    /**
+     * 树列表类型
+     */
+    datatype:"datatype",
+    /**
+     * 列表类型
+     */
+    list:"list"
+}
+/**
+ * 显示的格式样式 百分比，整形等格式
+ *
+ */
+const CELL_STYLE = {
+    /**
+     * 通常格式
+     */
+    styleCommon: 0,
+    /**
+     * 通常格式局中
+     */
+    styleCenter: 1,
+    /**
+     * excel的标题
+     */
+    styleCaption: 2,
+    /**
+     * 格式'0'
+     */
+    style1: 3,
+    /**
+     * 格式'0.00'
+     */
+    style2: 4,
+    /**
+     * 格式'＃,##0'
+     */
+    style3: 5,
+    /**
+     * 格式'＃,##0.00'
+     */
+    style4: 6,
+    /**
+     * 格式'0％'
+     */
+    style9: 7,
+    /**
+     * 格式'0.00％'
+     */
+    style10: 8
+}
 /**
  * 操作Excel相关函数
  */
 class excel {
     constructor() {
 
-    }
-    /**
-     * 显示的格式样式 百分比，整形等格式
-     * @type {{style9: number, style0: number, style1: number, style2: number, style3: number, style10: number, style4: number}}
-     */
-    cellStyle = {
-        /**
-         * 通常格式
-         */
-        styleCommon: 0,
-        /**
-         * 通常格式局中
-         */
-        styleCenter: 1,
-        /**
-         * excel的标题
-         */
-        styleCaption: 2,
-        /**
-         * 格式'0'
-         */
-        style1: 3,
-        /**
-         * 格式'0.00'
-         */
-        style2: 4,
-        /**
-         * 格式'＃,##0'
-         */
-        style3: 5,
-        /**
-         * 格式'＃,##0.00'
-         */
-        style4: 6,
-        /**
-         * 格式'0％'
-         */
-        style9: 7,
-        /**
-         * 格式'0.00％'
-         */
-        style10: 8
     }
     options = {
         //错误的文件目录
@@ -81,44 +118,44 @@ class excel {
     convertMssqlType (datatype){
         let result = datatype
         switch (datatype){
-            case "bit":
-                result = "bool";
+            case "tinyint":
+                result = DATA_TYPE.bool;
                 break;
             case "char":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "nchar":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "varchar":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "nvarchar":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "text":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "int":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "smallint":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "float":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "double":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "decimal":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "real":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "numeric":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
         }
         return result;
@@ -142,28 +179,31 @@ class excel {
         let result = datatype
         switch (datatype){
             case "tinyint":
-                result = "bool";
+                result = DATA_TYPE.bool;
                 break;
             case "char":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "varchar":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "text":
-                result = "string";
+                result = DATA_TYPE.string;
                 break;
             case "int":
-                result = "number";
+                result = DATA_TYPE.number;
+                break;
+            case "tinyint":
+                result = DATA_TYPE.number;
                 break;
             case "smallint":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "float":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
             case "double":
-                result = "number";
+                result = DATA_TYPE.number;
                 break;
         }
         return result;
@@ -217,26 +257,26 @@ class excel {
                         return v.toString();
                     }*/
                     switch (type){
-                        case "string":
-                            opt.cellType = "string";
+                        case DATA_TYPE.string:
+                            opt.cellType = DATA_TYPE.string;
                             val = $convert.getString(val)
                             break;
-                        case "date":
-                            opt.cellType = "string";
+                        case DATA_TYPE.date:
+                            opt.cellType = DATA_TYPE.string;
                             //居中对齐
-                            opt.styleIndex = self.cellStyle.styleCenter;
+                            opt.styleIndex = CELL_STYLE.styleCenter;
                             val = $convert.getDateStr(val)
                             break;
-                        case "datetime":
-                            opt.cellType = "string";
+                        case DATA_TYPE.datetime:
+                            opt.cellType = DATA_TYPE.string;
                             //居中对齐
-                            opt.styleIndex = self.cellStyle.styleCenter;
+                            opt.styleIndex = CELL_STYLE.styleCenter;
                             val = $convert.getDateTimeStr(val)
                             break;
-                        case "bool":
-                            opt.cellType = "string";
+                        case DATA_TYPE.bool:
+                            opt.cellType = DATA_TYPE.string;
                             //居中对齐
-                            opt.styleIndex = self.cellStyle.styleCenter;
+                            opt.styleIndex = CELL_STYLE.styleCenter;
                             if (!$util.isEmpty(val)) {
                                 if ($convert.getBool(val)) {
                                     val = "是";
@@ -247,7 +287,7 @@ class excel {
                                 val = "";
                             }
                             break;
-                        case "number":
+                        case DATA_TYPE.number:
                             opt.styleIndex = styleIndex;
                             val = $convert.getNumber(val,null)
                             break;
@@ -259,13 +299,13 @@ class excel {
                 function getColWidth(type){
                     let result = 15
                     switch (type){
-                        case "string":
+                        case DATA_TYPE.string:
                             result = 15
                             break;
-                        case "date":
+                        case DATA_TYPE.date:
                             result = 12
                             break;
-                        case "datetime":
+                        case DATA_TYPE.datetime:
                             result = 23
                             break;
                     }
@@ -290,7 +330,7 @@ class excel {
                      //   </cellXfs>
                      // 这个就是style.xml这个节点cellXfs中的索引号。
                      */
-                    captionStyleIndex: self.cellStyle.styleCaption,
+                    captionStyleIndex: CELL_STYLE.styleCaption,
                     //styleIndex:colStyle,
                     //日期格式要改变成string否则显示有问题
                     beforeCellWrite: function (row, cellData, eOpt) {
@@ -312,7 +352,7 @@ class excel {
             conf.cols = [];
             for (let item of headers) {
                 //判断json数据并且在headers上生成需要的对象
-                if (item.type == "json") {
+                if (item.type == DATA_TYPE.json) {
                     item.content = []
                     for (let i in item.templaterows) {
                         let templates = item.templaterows[i]
@@ -320,19 +360,19 @@ class excel {
                         item.content = item.content.concat(content)
                     }
                     item.content.forEach(function (n) {
-                        let type = "string"
+                        let type = DATA_TYPE.string
                         switch (n.type){
                             case "booleanfield":
-                                type = "bool"
+                                type = DATA_TYPE.bool
                                 break;
                             case "numberfield":
-                                type = "number"
+                                type = DATA_TYPE.number
                                 break;
                             case "datetimefield":
-                                type = "string"
+                                type = DATA_TYPE.string
                                 break;
                             case "datefield":
-                                type = "string"
+                                type = DATA_TYPE.string
                                 break;
                         }
                         let col = getCol(n.name, n.label, type)
@@ -342,7 +382,7 @@ class excel {
                     //有的时候是number类型但是有data的数据的。需要转换为string
                     let type = item.type
                     if ($util.isNotEmpty(item.data)){
-                        type = "string"
+                        type = DATA_TYPE.string
                     }
                     let col = getCol(item.name, item.title, type, item.cellStyle)
                     conf.cols.push(col);
@@ -409,7 +449,7 @@ class excel {
                 let item = headerObj[key]
                 /*//不是对象继续执行
                 if (!_.isObject(item)) continue*/
-                let columntype = "string"
+                let columntype = DATA_TYPE.string
                 if (item.type) columntype = item.type
                 let header = {
                     name: key,
@@ -583,13 +623,13 @@ class excel {
         }
         //转换为导出模板的类型
         function convertType(data){
-            let result = "string"
+            let result = DATA_TYPE.string
             if (typeof data == "string"){
-                result = "string"
+                result = DATA_TYPE.string
             }else if(typeof data == "number"){
-                result = "number"
+                result = DATA_TYPE.number
             }else if (typeof data == "date"){
-                result = "date"
+                result = DATA_TYPE.date
             }
             return result
         }
@@ -720,3 +760,4 @@ class excel {
     //==============================================================
 };
 module.exports = new excel()
+module.exports.DATA_TYPE = DATA_TYPE
