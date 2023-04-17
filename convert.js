@@ -64,6 +64,20 @@ class convert {
             return val.toString();
     }
     /**
+     * 得到数字。如果为空根据默认值返回
+     * @param {number} val 值
+     * @param {number} [defaultvalue] 默认值
+     * @returns {number}
+     */
+    getNumber (val, defaultvalue = 0) {
+        if ($util.isEmpty(val) || _.isNaN(Number(val)))
+            return defaultvalue;
+        else
+            return Number(val);
+
+    }
+    //===================================下面是时间和日期的函数==============================
+    /**
      * 得到日期类型
      * @param {Date} val 值
      * @param {Date} defaultvalue 默认值
@@ -85,7 +99,7 @@ class convert {
     getDate_MsSql (val, defaultvalue = null) {
         let result = defaultvalue
         if (_.isNumber(val)){
-            result = this.excelDateToString(val)
+            result = this.excelDateToStr(val)
         }else{
             if (dayjs(val).isValid()){
                 result = val;
@@ -102,7 +116,7 @@ class convert {
     getDateTime_MsSql (val, defaultvalue = null) {
         let result = defaultvalue
         if (_.isNumber(val)){
-            result = this.excelDateTimeToString(val)
+            result = this.excelDateTimeToStr(val)
         }else{
             if (dayjs(val).isValid()){
                 result = val;
@@ -116,7 +130,7 @@ class convert {
      * @param defaultvalue
      * @returns {null|Date}
      */
-    getJsonDate (val, defaultvalue = null) {
+    getDate_Json (val, defaultvalue = null) {
         if ($util.isEmpty(val)){
             return defaultvalue;
         }else{
@@ -136,32 +150,20 @@ class convert {
      * @param defaultvalue
      * @returns {null|Date}
      */
-    getJsonDateTime (val, defaultvalue = null) {
+    getDateTime_Json (val, defaultvalue = null) {
         if ($util.isEmpty(val))
             return defaultvalue;
         else
             return val.replace('T', ' ');
     }
-    /**
-     * 得到数字。如果为空根据默认值返回
-     * @param {number} val 值
-     * @param {number} [defaultvalue] 默认值
-     * @returns {number}
-     */
-    getNumber (val, defaultvalue = 0) {
-        if ($util.isEmpty(val) || _.isNaN(Number(val)))
-            return defaultvalue;
-        else
-            return Number(val);
 
-    }
     /**
      * 格式化日期加时间
      * @param {Date} val 值
      * @param {string} template 格式
      * @returns {string}
      */
-    getDateTimeString (val, template = "YYYY-MM-DD HH:mm:ss") {
+    getDateTimeStr (val, template = "YYYY-MM-DD HH:mm:ss") {
         //千万不要修改为_.isEmpty(val)因为这个函数无法判断日期
         if (!_.isDate(val))
             return "";
@@ -174,9 +176,9 @@ class convert {
      * @param {string} template
      * @returns {string}
      */
-    getDateString (val, template = "YYYY-MM-DD") {
+    getDateStr (val, template = "YYYY-MM-DD") {
         //千万不要修改为_.isEmpty(val)因为这个函数无法判断日期
-        return this.getDateTimeString(val, template);
+        return this.getDateTimeStr(val, template);
     }
 
     /**
@@ -197,6 +199,7 @@ class convert {
         }
         return result;
     }
+    //=========================================================
     /**
      * 字符串转成数组
      * @param {string} str 数组字符串
@@ -377,24 +380,60 @@ class convert {
      * @param {number} numb 日期的数字值
      * @returns {string}
      */
-    excelDateToString(value) {
+    excelDateToStr(value) {
         if (!_.isNumber(value)){
             return value
         }
         const time = this._getTime(value)
-        return this.getDateString(time)
+        return this.getDateStr(time)
     }
     /**
      * 因为excel时间返回的是数字。所以需要转换
      * @param {number} numb 日期的数字值
      * @returns {string}
      */
-    excelDateTimeToString(value) {
+    excelDateTimeToStr(value) {
         if (!_.isNumber(value)){
             return value
         }
         const time = this._getTime(value)
-        return this.getDateTimeString(time)
+        return this.getDateTimeStr(time)
+    }
+    /**
+     * 根据message.js里的有些字段有data的属性，根据名称得到对应的value的值
+     * @param {{text: string, value: string}} data
+     * @param {string} text
+     * @returns {*}
+     */
+    getDataValueByText(data, text){
+        let self = this
+        let result = text;
+        if ($util.isEmpty(text)) return result;
+        let item = _.find(data,function(o) {
+            return self.getString(o.text) == self.getString(_.trim(text));
+        })
+        if (item){
+            result = item.value
+        }
+        return result;
+    }
+    /**
+     * 根据message.js里的有些字段有data的属性，根据value的值得到对应的名称
+     * @param {object[]} data
+     * @param {string|number} value
+     * @returns {*}
+     */
+    getDataTextByValue(data, value){
+        let self = this
+        let result = value;
+        if ($util.isEmpty(value)) return result;
+        let item = _.find(data,function(o) {
+            return self.getString(o.value) == self.getString(value);
+        })
+        if (item){
+            result = item.text
+        }
+        return result;
     }
 };
 

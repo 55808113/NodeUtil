@@ -12,14 +12,14 @@ const $log4js = require('./log4js')
 //常用的js函数类
 const _ = require('lodash')
 
-module.exports = {
+class util {
     //================================================================================
     /**
      * 向前台返回JSON方法的简单封装
      * @param ctx
      * @param {object} data
      */
-    jsonWrite: function (ctx, data = {}) {
+    jsonWrite (ctx, data = {}) {
         if (typeof data === undefined) {
             ctx.body = {
                 status: 500,
@@ -31,7 +31,7 @@ module.exports = {
         }
         ctx.status = 200
         ctx.set("Content-Type", "text/json")
-    },
+    }
     /**
      * 向前台返回JSON方法的简单封装
      * @param ctx
@@ -40,7 +40,7 @@ module.exports = {
      * @param {int} pageSize 每个个数
      * @param {object} params 返回的其它参数
      */
-    jsonWriteEasyui: function (ctx, rows, pageIndex = 1, pageSize = 20, params = {}) {
+    jsonWriteEasyui (ctx, rows, pageIndex = 1, pageSize = 20, params = {}) {
         if (typeof rows === undefined) {
             ctx.body = {
                 status: 500,
@@ -63,7 +63,7 @@ module.exports = {
             };
             ctx.body = _.assign(easyuiData, params)
         }
-    },
+    }
     /**
      * 向前台返回JSON方法的简单封装这个是代footer的数据集合。
      * @param ctx
@@ -72,7 +72,7 @@ module.exports = {
      * @param {int} pageSize 每个个数
      * @param {object} params 返回的其它参数
      */
-    jsonWriteEasyuiByFooter: function (ctx, data, pageIndex = 1, pageSize = 20, params = {}) {
+    jsonWriteEasyuiByFooter (ctx, data, pageIndex = 1, pageSize = 20, params = {}) {
         if (typeof data === undefined) {
             ctx.body = {
                 status: 500,
@@ -98,7 +98,7 @@ module.exports = {
             };
             ctx.body = _.assign(easyuiData, params)
         }
-    },
+    }
     /**
      * 返回treegrid的json对象
      * @param ctx
@@ -112,7 +112,7 @@ module.exports = {
      * @param expand 是否扩展全部节点
      * @param params 其它参数信息
      */
-    jsonWriteTreegrid: function (ctx, rows, fieldOpt, expand = false, params = {}) {
+    jsonWriteTreegrid (ctx, rows, fieldOpt, expand = false, params = {}) {
         /**
          * 查询一条数据是否有子集
          * @param parentid
@@ -162,14 +162,14 @@ module.exports = {
             };
             ctx.body = _.assign(easyuiData, params)
         }
-    },
+    }
     /**
      * 返回成功
      * @param ctx
      * @param {string} message 返回的信息
      * @param {object} data 返回的数据对象
      */
-    resultSUCCESS: function (ctx, message = '', data = {}) {
+    resultSUCCESS (ctx, message = '', data = {}) {
         ctx.body = {
             status: 200,
             data: data || {},
@@ -177,14 +177,14 @@ module.exports = {
         }
         ctx.status = 200
         ctx.set("Content-Type", "text/json")
-    },
+    }
     /**
      * 返回错误的信息
      * @param ctx
      * @param {string} message 返回的信息
      * @param {object} data 返回的数据对象
      */
-    resultFAIL: function (ctx, message = '', data = {}) {
+    resultFAIL (ctx, message = '', data = {}) {
         if (!this.isEmpty(message)) {
             // throw new Error(message);
             if (message instanceof Object) {
@@ -200,13 +200,13 @@ module.exports = {
         } else {
             throw new Error(message);
         }
-    },
+    }
     /**
      * 返回错误的信息
      * @param ctx
      * @param {object} err
      */
-    resultERROR: function (ctx, err) {
+    resultERROR (ctx, err) {
         $log4js.errLogger(ctx, err)
         ctx.status = err.statusCode || err.status || 500;
         if (err instanceof Object) {
@@ -215,21 +215,21 @@ module.exports = {
         ctx.body = err
         // 手动触发error事件
         //ctx.app.emit('error', err, ctx);
-    },
+    }
     /**
      * 得到当前系统日期
      * @returns {string}
      */
-    getNowDate: function () {
+    getNowDate () {
         return dayjs().format('YYYY-MM-DD');
-    },
+    }
     /**
      * 得到当前系统日期时间
      * @returns {string}
      */
-    getNowDateTime: function () {
+    getNowDateTime () {
         return dayjs().format('YYYY-MM-DD HH:mm:ss');
-    },
+    }
     /*
     * 生成认证码
     * */
@@ -272,16 +272,15 @@ module.exports = {
      * @returns {string}
      * @constructor
      */
-    UUID: function () {
+    UUID () {
         return uuid.v1();
-    },
-
+    }
     /**
      * 判断字符串是否为空
      * @param obj
      * @returns {boolean}
      */
-    isEmpty: function (obj) {
+    isEmpty (obj) {
         if (_.isNil(obj)) {
             return true;
         }
@@ -291,12 +290,12 @@ module.exports = {
             }
         }
         return false;
-    },
+    }
     /**
      * 判断是否为空对象
      * @param obj
      */
-    isEmptyObject: function (item) {
+    isEmptyObject (item) {
         if (item==undefined||item==null) {
             return true;
         }
@@ -304,51 +303,51 @@ module.exports = {
             return true;
         }
         return false;
-    },
+    }
     /**
      * 判断是否为不为空对象
      * @param obj
      */
-    isNotEmptyObject: function (item) {
+    isNotEmptyObject (item) {
         return !this.isEmptyObject(item);
-    },
+    }
     /**
      * 判断字符串是否不为空
      * @param obj
      */
-    isNotEmpty: function (obj) {
+    isNotEmpty (obj) {
         return !this.isEmpty(obj);
-    },
+    }
     /**
      * 随机数
      * @param {number} min 最小值
      * @param {number} max 最大值
      * @returns {number}
      */
-    getRandom: function (min, max) {
+    getRandom (min, max) {
         return min + Math.random() * (max - min);
-    },
+    }
     /**
      * 随机整数
      * @param {number} min 最小值
      * @param {number} max 最大值
      * @returns {number}
      */
-    randomNum: function (min, max) {
+    randomNum (min, max) {
         return Math.floor(this.getRandom(min, max));
-    },
+    }
     /**
      *
      * @param {number} min 最小值
      * @param {number} max 最大值
      * @returns {string}
      */
-    randomColor: function (min, max) {
+    randomColor (min, max) {
         let _r = this.randomNum(min, max);
         let _g = this.randomNum(min, max);
         let _b = this.randomNum(min, max);
         return "rgb(" + _r + "," + _g + "," + _b + ")";
-    },
+    }
     /**
      * 替换全部内容
      * @param str
@@ -356,19 +355,19 @@ module.exports = {
      * @param replacement
      * @returns {string}
      */
-    replaceAll: function (str,pattern,replacement){
+    replaceAll (str,pattern,replacement){
         let result = str
         while (result.indexOf(pattern)!=-1){
             result = _.replace(result,pattern,replacement);
         }
         return result
-    },
+    }
     /**
      * 解决eval的错误提示
      * @param {string} command
      * @returns {*}
      */
-    evil:function (command) {
+    evil (command) {
         let Fn = Function;  //一个变量指向Function，防止有些前端编译工具报错
         //command = this.replaceAll(command, '"',"'")
         try{
@@ -383,3 +382,5 @@ module.exports = {
         }
     }
 };
+
+module.exports = new util()

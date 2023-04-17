@@ -225,13 +225,13 @@ class excel {
                             opt.cellType = "string";
                             //居中对齐
                             opt.styleIndex = self.cellStyle.styleCenter;
-                            val = $convert.getDateString(val)
+                            val = $convert.getDateStr(val)
                             break;
                         case "datetime":
                             opt.cellType = "string";
                             //居中对齐
                             opt.styleIndex = self.cellStyle.styleCenter;
-                            val = $convert.getDateTimeString(val)
+                            val = $convert.getDateTimeStr(val)
                             break;
                         case "bool":
                             opt.cellType = "string";
@@ -339,7 +339,12 @@ class excel {
                         conf.cols.push(col);
                     })
                 } else {
-                    let col = getCol(item.name, item.title, item.type, item.cellStyle)
+                    //有的时候是number类型但是有data的数据的。需要转换为string
+                    let type = item.type
+                    if ($util.isNotEmpty(item.data)){
+                        type = "string"
+                    }
+                    let col = getCol(item.name, item.title, type, item.cellStyle)
                     conf.cols.push(col);
                 }
             }
@@ -380,14 +385,15 @@ class excel {
                     } else {
                         //得到有data类型的话。取真实数据的值
                         if ($util.isNotEmpty(item.data)){
-                            let index = _.findIndex(item.data,
+                            val = $convert.getDataTextByValue(item.data,val)
+                            /*let index = _.findIndex(item.data,
                                 function(o) {
                                     return $convert.getString(o.value) == $convert.getString(val);
                                 }
                             )
                             if (index!=-1){
                                 val = item.data[index].text
-                            }
+                            }*/
                         }
                         data.push($convert.getObject(val))
                     }
