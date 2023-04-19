@@ -72,7 +72,7 @@ class file {
      * @returns {JSON|null}
      */
     readJson(filepath, encoding = "utf-8"){
-        return $convert.strToJson(this.readFile(filepath,encoding))
+        return $convert.getJson(this.readFile(filepath,encoding))
     }
     /**
      * 写文件

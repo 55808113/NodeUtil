@@ -369,7 +369,7 @@ class excel {
                     item.content = []
                     for (let i in item.templaterows) {
                         let templates = item.templaterows[i]
-                        let content = $convert.strToJson(templates.content);
+                        let content = $convert.getJson(templates.content);
                         item.content = item.content.concat(content)
                     }
                     item.content.forEach(function (n) {
@@ -412,7 +412,7 @@ class excel {
                 for (let item of headers) {
                     let val = row[item.name]
                     if (item.type == "json") {
-                        let dataObj = $convert.strToJson(val)
+                        let dataObj = $convert.getJson(val)
                         for (let n of item.content) {
                             let value = ""
                             if (!_.isEmpty(dataObj)) {

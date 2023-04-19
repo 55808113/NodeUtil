@@ -65,7 +65,7 @@ class convert {
     }
     /**
      * 得到数字。如果为空根据默认值返回
-     * @param {number} val 值
+     * @param {string} val 值
      * @param {number} [defaultvalue] 默认值
      * @returns {number}
      */
@@ -255,7 +255,7 @@ class convert {
      * @param {string|Object} str 要转换的字符串
      * @returns {JSON|null} 返回JSON对象
      */
-    strToJson (str) {
+    getJson (str) {
         //如果是对象直接返回
         if (str instanceof Object){
             return str
@@ -274,10 +274,17 @@ class convert {
      * @param {JSON} json json对象
      * @returns {string} 字符串
      */
-    jsonToStr(json) {
-        if (!_.isEmpty(json)) {
-            return JSON.stringify(json);
+    getJsonStr(json) {
+        let result = ""
+        //如果是对象直接返回
+        if (json instanceof String){
+            return json;
         }
+
+        if (!_.isEmpty(json)) {
+            result = JSON.stringify(json);
+        }
+        return result
     }
     /**
      * 过滤html标签
