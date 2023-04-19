@@ -116,7 +116,7 @@ class excel {
      * @param datatype
      */
     convertMssqlType (datatype){
-        let result = datatype
+        let result = DATA_TYPE.string
         switch (datatype){
             case "tinyint":
                 result = DATA_TYPE.bool;
@@ -157,26 +157,21 @@ class excel {
             case "numeric":
                 result = DATA_TYPE.number;
                 break;
+            case "date":
+                result = DATA_TYPE.date;
+                break;
+            case "datetime":
+                result = DATA_TYPE.datetime;
+                break;
         }
         return result;
-    }
-    /**
-     * 得到导入的文件路径
-     * @param filepath
-     */
-    getImpFilePath(filepath){
-        return path.join($upload.options.uploadpath,filepath)
-    }
-    getImpFailpath(filepath){
-        let opts = this.options
-        return path.join(opts.impFailpath,filepath)
     }
     /**
      * mysql的类型转换为excel的类型
      * @param datatype
      */
     convertMysqlType (datatype){
-        let result = datatype
+        let result = DATA_TYPE.string
         switch (datatype){
             case "tinyint":
                 result = DATA_TYPE.bool;
@@ -205,9 +200,27 @@ class excel {
             case "double":
                 result = DATA_TYPE.number;
                 break;
+            case "date":
+                result = DATA_TYPE.date;
+                break;
+            case "datetime":
+                result = DATA_TYPE.datetime;
+                break;
         }
         return result;
     }
+    /**
+     * 得到导入的文件路径
+     * @param filepath
+     */
+    getImpFilePath(filepath){
+        return path.join($upload.options.uploadpath,filepath)
+    }
+    getImpFailpath(filepath){
+        let opts = this.options
+        return path.join(opts.impFailpath,filepath)
+    }
+
     /**
      * 得到一个sheet对象
      * @param {object} colInfos message的对象信息
@@ -755,6 +768,7 @@ class excel {
             $file.writeFile(path.join(failfilepath, resultInfo.failfilename), excelStream)
             await options.onImportFail.call(this, uploadFilename, resultInfo.failfilename)
         }
+        console.log("impExcel complete!")
         return resultInfo
     }
     //==============================================================

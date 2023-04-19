@@ -110,7 +110,6 @@ class mysql2Helper extends $sqlHelper {
 
         return result;
     }
-
     /**
      * 执行带事务的sql语句
      * @param {string} sql sql语句
@@ -135,7 +134,6 @@ class mysql2Helper extends $sqlHelper {
         }*/
         return result;
     }
-
     /**
      * 执行事务的函数
      * @param {function} fn 返回的函数
@@ -165,6 +163,11 @@ class mysql2Helper extends $sqlHelper {
             connection.release()
         }
     }
+    /**
+     * 得到链接
+     * @param {function} fn
+     * @returns {Promise<void>}
+     */
     async getConnection (fn) {
         let connection = await this._getConnection();
         try {

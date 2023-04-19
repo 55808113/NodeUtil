@@ -20,7 +20,7 @@ class util {
      * @param {object} data
      */
     jsonWrite (ctx, data = {}) {
-        if (typeof data === undefined) {
+        if (_.isUndefined(data)) {
             ctx.body = {
                 status: 500,
                 data: data || {},
@@ -41,7 +41,7 @@ class util {
      * @param {object} params 返回的其它参数
      */
     jsonWriteEasyui (ctx, rows, pageIndex = 1, pageSize = 20, params = {}) {
-        if (typeof rows === undefined) {
+        if (_.isUndefined(rows)) {
             ctx.body = {
                 status: 500,
                 message: '操作失败'
@@ -73,7 +73,7 @@ class util {
      * @param {object} params 返回的其它参数
      */
     jsonWriteEasyuiByFooter (ctx, data, pageIndex = 1, pageSize = 20, params = {}) {
-        if (typeof data === undefined) {
+        if (_.isUndefined(data)) {
             ctx.body = {
                 status: 500,
                 message: '操作失败'
@@ -132,7 +132,7 @@ class util {
             return false;
         }
 
-        if (typeof rows === undefined) {
+        if (_.isUndefined(rows)) {
             ctx.body = {
                 status: 500,
                 message: '操作失败'

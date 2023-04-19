@@ -260,7 +260,7 @@ class mssqlhelper extends $sqlHelper  {
      * 执行事务sql语句
      * @param {string} sql sql语句
      * @param {object[]} params sql参数
-     * @returns {Promise<object[]>}
+     * @returns {Promise<object[]|boolean>}
      */
     async execTransactionSql(sql, params=[]) {
         let result = true

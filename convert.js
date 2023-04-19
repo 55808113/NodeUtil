@@ -401,39 +401,77 @@ class convert {
     }
     /**
      * 根据message.js里的有些字段有data的属性，根据名称得到对应的value的值
-     * @param {{text: string, value: string}} data
+     * @param {[{text: string, value: string}]} data
      * @param {string} text
+     * @param {{text: string, value: string}} options
      * @returns {*}
      */
-    getDataValueByText(data, text){
+    getDataValueByText(data, text, options){
         let self = this
         let result = text;
         if ($util.isEmpty(text)) return result;
+        options = _.assign({},{
+            text:"text",
+            value:"value"
+        },options)
         let item = _.find(data,function(o) {
-            return self.getString(o.text) == self.getString(_.trim(text));
+            return self.getString(o[options.text]) == self.getString(_.trim(text));
         })
         if (item){
-            result = item.value
+            result = item[options.value]
         }
         return result;
     }
     /**
      * 根据message.js里的有些字段有data的属性，根据value的值得到对应的名称
-     * @param {object[]} data
+     * @param {object[{text: string, value: string}]} data
      * @param {string|number} value
+     * @param {{text: string, value: string}} options
      * @returns {*}
      */
-    getDataTextByValue(data, value){
+    getDataTextByValue(data, value, options){
         let self = this
         let result = value;
         if ($util.isEmpty(value)) return result;
+        options = _.assign({},{
+            text:"text",
+            value:"value"
+        },options)
         let item = _.find(data,function(o) {
-            return self.getString(o.value) == self.getString(value);
+            return self.getString(o[options.value]) == self.getString(value);
         })
         if (item){
-            result = item.text
+            result = item[options.text]
         }
         return result;
+    }
+    /**
+     * 根据message.js里的有些字段有data的属性，根据名称得到对应的value的值
+     * @param {[{text: string, value: string}]} data
+     * @param {string} infonm
+     * @param {{text: string, value: string}} options
+     * @returns {*}
+     */
+    getInfoidByInfonm(data, infonm){
+        let self = this
+        return self.getDataValueByText(data,infonm,{
+            text:"infonm",
+            value:"infoid"
+        });
+    }
+    /**
+     * 根据message.js里的有些字段有data的属性，根据value的值得到对应的名称
+     * @param {object[]} data
+     * @param {string|number} value
+     * @param {object{text: string, value: string}} options
+     * @returns {*}
+     */
+    getInfonmByInfoid(data, infoid, options){
+        let self = this
+        return self.getDataTextByValue(data,infoid,{
+            text:"infonm",
+            value:"infoid"
+        });
     }
 };
 
