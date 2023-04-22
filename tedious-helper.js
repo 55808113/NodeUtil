@@ -1,7 +1,25 @@
 /**
  * mssql数据库相关函数
  * 必须在调试里添加下面的语句--tls-min-v1.0 否则无法连接数据库
- *
+ * @example
+ * 配置文件
+ * mssql_base: {
+        server: 'localhost',
+        authentication: {
+            type: 'default',
+            options: {
+                userName: 'sa',
+                password: 'sunxdd3154271'
+            }
+        },
+        options: {
+            database: 'UFBonus_2012',
+            port: 1433, // Default Port
+            useUTC: false,//必须设置为false否则时区对应不正确
+            trustServerCertificate: true,
+            requestTimeout: 10*60*1000 //超时时间设置为10分钟
+        }
+    },
  * */
 const {Connection,Request,TYPES} = require('tedious');
 const _ = require('lodash')

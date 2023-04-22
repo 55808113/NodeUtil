@@ -1,6 +1,17 @@
 /**
  * oracle数据库相关函数
- *
+ * @example
+ * 配置文件
+ * oracle: {
+        //_enableStats: true,
+        user:'clf_henan',　　//用户名
+        password:'clf',　　//密码
+        //IP:数据库IP地址，PORT:数据库端口，SCHEMA:数据库名称
+        connectString : "localhost:1521/ORCL",
+        poolAlias: "default", //起一个别名用来识别不同的连接池,可以为空，默认为default
+        poolMin:10, //开始的连接池个数
+        poolMax:100
+    },
  * */
 
 const oracle = require('oracledb')
