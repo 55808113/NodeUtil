@@ -354,7 +354,6 @@ class mssqlhelper extends $sqlHelper  {
         let result = {}
         try {
             sql = self.getSqlStr(sql)
-            let connection = await self._getConnection()
             let request = new mssql.Request(connection)
             request.multiple = true
             if (params) {

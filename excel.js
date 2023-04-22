@@ -5,7 +5,6 @@
 const nodeExcel = require('@sunxdd/excel-export')
 const xlsx = require('xlsx')
 const _ = require('lodash')
-const fs = require('fs')
 //const xlsx = require('xlsx-style');//选择使用xlsx-style可以设置表格样式
 const ejsexcel = require("ejsexcel")
 const path = require('path')
@@ -13,10 +12,6 @@ const $util = require('./util')
 const $convert = require('./convert')
 const $upload = require('./upload')
 const $file = require('./file')
-const $sqlHelper = require('./sql-helper')
-const $mysqlhelper = require('./mysql2-helper')
-const $mssqlhelper = require('./mssql-helper')
-//const $oraclehelper = require('./oracle-helper')
 /**
  * 数据类型
  * @type {{}}
@@ -615,7 +610,7 @@ class excel {
     /**
      * 导入excel文件
      * @param {object} ctx
-     * @param {{sql: string,sqlFunction: function, onUploadFileSuccess: function, onSetParams:function, onImportFail: function}} opts  sql语句
+     * @param {object} opts  sql语句
      * @returns {Promise<{{fail: number, success: number, failfilename: string}}>}
      * @example
      * {
@@ -646,40 +641,27 @@ class excel {
             }
             return result
         }
-        /**
-         *
-         * @param sqlType
-         * @returns {mysqlhelper|mssqlhelper}
-         */
-        function getSqlhelper(sqlType){
-            let result = $mysqlhelper
-            switch (sqlType){
-                case $sqlHelper.SQL_TYPE.MYSQL://mysql
-                    result = $mysqlhelper;
-                    break;
-                case $sqlHelper.SQL_TYPE.MSSQL://mssql
-                    result = $mssqlhelper;
-                    break;
-                case $sqlHelper.SQL_TYPE.ORACLE://oracle
-                    result = $oraclehelper;
-                    break;
-            }
-            return result
-        }
 
         /**
          * 执行sql命令
          */
         async function execSql(connection, params){
             if ($util.isEmpty(options.sqlFunction)){
-                await getSqlhelper(options.sqlType).execSqlByConnection(connection, options.sql, params)
+                await options.sqlHelper.execSqlByConnection(connection, options.sql, params)
             }else{
                 await options.sqlFunction.call(self,connection,params)
             }
         }
-        let options = {
+        let defaultOptions = {
+            /**
+             * 要执行的sql语句
+             */
             sql:"",
-            sqlType: $sqlHelper.SQL_TYPE.MYSQL,//0:mysql,1:mssql
+            /**
+             * 执行的数据库Helper.
+             * @returns {mysqlhelper|mssqlhelper}
+             */
+            sqlHelper: null,//$mysqlhelper $mssqlhelper
             sqlFunction:null,//执行的sql的过程函数。function(connection,param)
             /**
              * 上传文件成功事件:让程序取得一些参数
@@ -711,7 +693,7 @@ class excel {
             }
         }
         let self = this
-        options = _.assign({},options,opts)
+        let options = _.assign({},defaultOptions,opts)
         let failfilepath = this.options.impFailpath
         let uploaddata = await $upload.uploadfile(ctx,["xls","xlsx"])
         //得到上传的文件名
@@ -724,7 +706,7 @@ class excel {
             fail: 0,
             failfilename: $file.UUIDFileName("err.xlsx")
         }
-        await getSqlhelper(options.sqlType).getConnection(async function(connection){
+        await options.sqlHelper.getConnection(async function(connection){
             for (let i = 0; i < rows.length; i++) {
                 let item = rows[i];
                 try {

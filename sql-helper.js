@@ -4,12 +4,17 @@
  * */
 const _ = require('lodash')
 
+const SQL_TYPE = {
+    MYSQL:0,//mysql数据库
+    MSSQL:1,//mssql数据库
+    ORACLE:2//oracle数据库
+}
 /**
  * mysql连接数据库的类
  */
 class sqlHelper {
     options = {
-        sqlType:sqlHelper.SQL_TYPE.MSSQL
+        sqlType:SQL_TYPE.MSSQL
     }
     /**
      *
@@ -52,11 +57,6 @@ class sqlHelper {
 
     }
 
-    static SQL_TYPE = {
-        MYSQL:0,//mysql数据库
-        MSSQL:1,//mssql数据库
-        ORACLE:2//oracle数据库
-    }
-
 };
 module.exports = sqlHelper
+module.exports.SQL_TYPE = SQL_TYPE
