@@ -1,6 +1,6 @@
 
 const AipFaceClient = require("baidu-aip-sdk").face
-const AipBodyAnalysisClient = require("baidu-aip-sdk").bodyanalysis;
+const AipBodyAnalysisClient = require("baidu-aip-sdk").bodyAnalysis;
 const AipSpeechClient = require("baidu-aip-sdk").speech;
 
 // 设置APPID/AK/SK
