@@ -368,6 +368,32 @@ class mssqlhelper extends $sqlHelper  {
         }
         return result.recordset;
     }
+
+    /**
+     * 得到所有存储过程名称
+     * @returns {Promise<object[]>}
+     */
+    async getAllProcedureName () {
+        let sql = `SELECT name FROM sys.procedures ORDER BY name`
+        return await this.execSql(sql)
+    }
+    /**
+     * 得到in类型的存储过程参数
+     * @param {string} procedureName 存储过程名称
+     * @returns {Promise<object[]>}
+     */
+    async getProcedureParameters (procedureName) {
+        let result = []
+        let rsParams = await this._getProcedureParameters(procedureName)
+        if ($util.isNotEmpty(rsParams)) {
+            for (const rsParam of rsParams) {
+                if (rsParam.ParamType == "IN"){
+                    result.push(rsParam)
+                }
+            }
+        }
+        return result
+    }
     /**
      * 执行存储过程
      * @param {string} sql sql语句
@@ -391,20 +417,21 @@ class mssqlhelper extends $sqlHelper  {
                     let rsparam = rsParams[i]
 					//当没有参数时也返回一条数据。根据ParamName是否存在来判断
                     if ($util.isEmpty(rsparam.ParamName)) break;
-                    let param = params[i]
                     let paramType = this._getParametersType(rsparam.DataType)
                     let paramName = rsparam.ParamName.replace("@","")
                     if (rsparam.ParamType == "IN"){
+                        if (paramInputlength + 1 > params.length){
+                            throw new Error("存储过程：" + procedureName + "传入的参数与实际参数个数不符！")
+                            return null;
+                        }
+                        let param = params[paramInputlength]
                         paramInputlength++
                         request.input(paramName, paramType, param);
                     }else{
                         request.output(paramName, paramType);
                     }
                 }
-                if ($util.isEmpty(params) || paramInputlength!=params.length){
-                    throw new Error("存储过程：" + procedureName + "传入的参数与实际参数个数不符！")
-                    return null;
-                }
+
             }
 
             result = await request.execute(procedureName)
