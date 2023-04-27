@@ -48,7 +48,11 @@ const DATA_TYPE = {
     /**
      * 列表类型
      */
-    list:"list"
+    list:"list",
+    /**
+     * 字段模板
+     */
+    fieldtemplate:"fieldtemplate"
 }
 /**
  * 显示的格式样式 百分比，整形等格式
@@ -299,6 +303,10 @@ class excel {
                             opt.styleIndex = styleIndex;
                             val = $convert.getNumber(val,null)
                             break;
+                        case DATA_TYPE.json:
+                            opt.styleIndex = styleIndex;
+                            val = $convert.getJsonStr(val)
+                            break;
                     }
 
                     return val;
@@ -359,8 +367,8 @@ class excel {
 
             conf.cols = [];
             for (let item of headers) {
-                //判断json数据并且在headers上生成需要的对象
-                if (item.type == DATA_TYPE.json) {
+                //判断字段模板数据并且在headers上生成需要的对象
+                if (item.type == DATA_TYPE.fieldtemplate) {
                     item.content = []
                     for (let i in item.templaterows) {
                         let templates = item.templaterows[i]
@@ -406,7 +414,7 @@ class excel {
                 let row = rows[i]
                 for (let item of headers) {
                     let val = row[item.name]
-                    if (item.type == "json") {
+                    if (item.type == DATA_TYPE.fieldtemplate) {
                         let dataObj = $convert.getJson(val)
                         for (let n of item.content) {
                             let value = ""
@@ -536,7 +544,7 @@ class excel {
      * @param ctx
      * @param {string} title 导出的文件名
      * @param {object|object[]} headerObj 导出的头文件格式对象
-     * @param {object[]} rows 导出的数据
+     * @param {object[]|object} rows 导出的数据
      * @param {object[]} [mergeCells] 合并单元格对象[{mergeField:'',premiseField:''}]
      * @param {string} [sheetTitle] sheet标题
      * @example
