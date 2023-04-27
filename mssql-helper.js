@@ -231,6 +231,111 @@ class mssqlhelper extends $sqlHelper  {
     }
 
     /**
+     * 根据类型得到值
+     * @param parametersType
+     * @param value
+     * @returns {any}
+     */
+    getParametersValueByType(parametersType,value){
+        let result = value
+        switch (parametersType) {
+            case 'tinyint':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'bit':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'smallint':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'int':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'smalldatetime':
+                result = $convert.getDate_MsSql(value)
+                break;
+            case 'real':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'money':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'datetime':
+                result = $convert.getDate_MsSql(value)
+                break;
+            case 'float':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'decimal':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'numeric':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'smallmoney':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'bigint':
+                result = $convert.getNumber(value,null)
+                break;
+            case 'image':
+                result = value
+                break;
+            case 'text':
+                result = value
+                break;
+            case 'uniqueIdentifier':
+                result = value
+                break;
+            case 'ntext':
+                result = value
+                break;
+            case 'varbinary':
+                result = value
+                break;
+            case 'varchar':
+                result = value
+                break;
+            case 'binary':
+                result = value
+                break;
+            case 'char':
+                result = value
+                break;
+            case 'nvarchar':
+                result = value
+                break;
+            case 'nchar':
+                result = value
+                break;
+            case 'xml':
+                result = value
+                break;
+            case 'time':
+                result = value
+                break;
+            case 'date':
+                result = $convert.getDate_MsSql(value)
+                break;
+            case 'datetime2':
+                result = $convert.getDate_MsSql(value)
+                break;
+            case 'datetimeoffset':
+                result = $convert.getDate_MsSql(value)
+                break;
+            case 'udt':
+                result = value
+                break;
+            case 'tvp':
+                result = value
+                break;
+            case 'variant':
+                result = value
+                break;
+        }
+        return result
+    }
+    /**
      * 得到getConnection
      * @returns {Promise<Connection>}
      */
