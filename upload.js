@@ -175,7 +175,7 @@ module.exports = {
             if (extArr.indexOf(extension) != -1 || extArr == '*') {
                 cb(null, true);
             } else {
-                cb("你上传文件类型["+extension+"]不在允许的文件类型["+ extArr + "]里，请重新选择文件！", false);
+                cb("你上传文件类型["+extension+"],不在允许的文件类型["+ extArr + "]里，请重新选择文件！", false);
             }
         }
         return multer({storage: storage, fileFilter: fileFilter});

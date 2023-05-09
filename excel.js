@@ -257,9 +257,10 @@ class excel {
              * @param {string} title 标题名称
              * @param {string} type 属性类型
              * @param {int} [cellStyle] 显示的格式
+             * @param {int} [width] 显示的格式
              * @returns {{width: number, captionStyleIndex: number, caption, beforeCellWrite: (function(*, *=, *=): number), type}}
              */
-            function getCol(name, title, type, cellStyle) {
+            function getCol(name, title, type, cellStyle, width) {
                 //格式判断
                 function format(val, opt, styleIndex) {
                     let type = opt.cellType;
@@ -335,7 +336,7 @@ class excel {
                     //所有的属性类型都是string
                     type:type,
                     //width不好使
-                    width:getColWidth(type),
+                    width:width?width:getColWidth(type),
                     /**
                      * 标题的样式索引
                      * //<cellXfs count="4">
@@ -400,7 +401,7 @@ class excel {
                     if ($util.isNotEmpty(item.data)){
                         type = DATA_TYPE.string
                     }
-                    let col = getCol(item.name, item.title, type, item.cellStyle)
+                    let col = getCol(item.name, item.title, type, item.cellStyle, item.width)
                     conf.cols.push(col);
                 }
             }
@@ -476,6 +477,8 @@ class excel {
                      */
                     cellStyle: item.cellStyle,
                     order: item.order,
+                    //宽度。如果没有就是系统根据类型定义
+                    width: item.width,
                     /**
                      * 像类型这样的，这个是类型对应的名称
                      * data: [
