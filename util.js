@@ -374,7 +374,7 @@ class util {
             if (command.indexOf("return")!=-1){
                 return new Fn(command)();
             }else{
-                return new Fn("return" + command)();
+                return new Fn("return " + command)();
             }
         }catch (err){
             $log4js.errLogger(null,{evilcommand:command})
