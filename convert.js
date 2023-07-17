@@ -54,7 +54,7 @@ class convert {
     /**
      * 得到字符类型
      * @param {string} val 值
-     * @param {string} defaultvalue 默认值
+     * @param {string|null} defaultvalue 默认值
      * @returns {string|*}
      */
     getString (val, defaultvalue = "") {
