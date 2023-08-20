@@ -187,9 +187,6 @@ class excel {
             case "int":
                 result = DATA_TYPE.number;
                 break;
-            case "tinyint":
-                result = DATA_TYPE.number;
-                break;
             case "smallint":
                 result = DATA_TYPE.number;
                 break;

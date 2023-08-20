@@ -72,8 +72,8 @@ class pdf {
      * @param {string} title 文件的名称
      * @returns {Promise<unknown>}
      */
-    pdfPreview (ctx, jsondata, htmlpath, title) {
-        this.pdfDownload(ctx, jsondata, htmlpath, title,true);
+    async pdfPreview (ctx, jsondata, htmlpath, title) {
+        await this.pdfDownload(ctx, jsondata, htmlpath, title,true);
     }
     /**
      * 根据模板生成html文件
